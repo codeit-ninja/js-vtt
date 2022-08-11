@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": "./src/",
     "target": "ESNext",
     "useDefineForClassFields": true,
     "module": "ESNext",
@@ -16,9 +15,6 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "skipLibCheck": true,
-    "declaration": true,
-    "paths": {
-      "js-vtt/utils": ["utils.ts"]
-    }
+    "declaration": true
   }
 }

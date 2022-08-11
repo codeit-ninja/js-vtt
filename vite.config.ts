@@ -1,31 +1,26 @@
 import { defineConfig } from 'vite'
 // @ts-ignore
 import dts from 'vite-plugin-dts'
-import path from 'path'
 
 export default defineConfig({
+    appType: "custom",
     plugins: [dts()],
     build: {
-        emptyOutDir: false,
+        target: "esnext",
+        lib: {
+            entry: './src/main.ts',
+            // the proper extensions will be added
+            formats: ['es', 'cjs']
+        },
         rollupOptions: {
             output: {
-                entryFileNames: '[name].[format].js'
+                inlineDynamicImports: false,
+                preserveModules: true,
+                dir: "./dist",
+                entryFileNames: ({ name: fileName }) => {
+                    return `${fileName}.[format].js`
+                },
             }
-        },
-        lib: {
-            entry: 'src/main.ts',
-            name: 'js-vtt',
-            // the proper extensions will be added
-            fileName: 'converter',
-            formats: ['es']
         }
     },
-    resolve: {
-        alias: {
-            '@': path.resolve(__dirname, './src/'),
-            '@helpers': path.resolve(__dirname, './src/helpers.ts'),
-            'js-vtt/utils': path.resolve(__dirname, './src/utils.ts'),
-            '@errors': path.resolve(__dirname, './src/errors/'),
-        },
-    }
 })

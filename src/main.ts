@@ -8,12 +8,27 @@
  *               _/ |    
  *              |__/    
  */
-export * from "./vtt";
-export * from "./constants";
-export * from "./webvtt/Timings";
-export * from "./webvtt/Text";
-export * from "./webvtt/segments/Segment";
-export * from "./webvtt/segments/Cue";
-export * from "./webvtt/segments/Comment";
-export * from "./webvtt/segments/Header";
-export * from "./webvtt/segments/Style";
+import { SEGMENT_COMMENT_REGEX, SEGMENT_CUE_REGEX, SEGMENT_STYLE_REGEX, SEGMENT_HEADER_REGEX } from "./constants";
+import VTT from "./vtt";
+import Timings from "./webvtt/Timings";
+import Text from "./webvtt/Text";
+import Segment from "./webvtt/segments/Segment";
+import Cue from "./webvtt/segments/Cue";
+import Comment from "./webvtt/segments/Comment";
+import Header from "./webvtt/segments/Header";
+import Style from "./webvtt/segments/Style";
+
+export {
+    SEGMENT_COMMENT_REGEX,
+    SEGMENT_CUE_REGEX,
+    SEGMENT_HEADER_REGEX,
+    SEGMENT_STYLE_REGEX,
+    Text,
+    VTT,
+    Cue,
+    Header,
+    Timings,
+    Style,
+    Segment,
+    Comment
+}
