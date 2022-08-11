@@ -1,6 +1,6 @@
 {
   "name": "js-vtt",
-  "version": "beta-1.0.0",
+  "version": "beta-1.0.1",
   "type": "module",
   "main": "./dist/main.es.js",
   "types": "./dist/main.d.ts",
