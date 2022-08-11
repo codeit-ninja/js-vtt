@@ -108,6 +108,16 @@ export default class VTT<Meta extends Record<string, any>> {
         return this._segments.filter(s => s instanceof Style) as Style[];
     }
 
+    /**
+     * Create VTT instance from string
+     *
+     * @param str
+     * @param error
+     * @throws {InvalidVttError}
+     */
+    public static fromString(str: string, error?: true): VTT<{}>;
+    public static fromString(str: string, error?: true): VTT<{}>;
+    public static fromString(str: string, error?: false): false|VTT<{}>;
     public static fromString<Meta extends Record<string, any> = {}>( str: string, error = true ) {
         if ( ! isVtt(str) ) {
             if ( ! error ) {
