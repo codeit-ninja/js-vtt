@@ -1,6 +1,6 @@
 import Cue from "./segments/Cue";
 import {isArray} from "lodash";
-import {toSrtTimingString, toVttTimingString} from "@utils";
+import {toSrtTimingString, toVttTimingString} from "js-vtt/utils";
 
 type TimingsSettings = {
    startTime?: string;

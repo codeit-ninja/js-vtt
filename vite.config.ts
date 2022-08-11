@@ -24,7 +24,7 @@ export default defineConfig({
         alias: {
             '@': path.resolve(__dirname, './src/'),
             '@helpers': path.resolve(__dirname, './src/helpers.ts'),
-            '@utils': path.resolve(__dirname, './src/utils.ts'),
+            'js-vtt/utils': path.resolve(__dirname, './src/utils.ts'),
             '@errors': path.resolve(__dirname, './src/errors/'),
         },
     }
