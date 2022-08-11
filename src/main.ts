@@ -9,7 +9,7 @@
  *              |__/    
  */
 export * from "./vtt";
-export * from "./utils";
+export * as utils from "./utils";
 export * from "./constants";
 export * from "./webvtt/Timings";
 export * from "./webvtt/Text";
