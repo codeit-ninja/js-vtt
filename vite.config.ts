@@ -3,7 +3,6 @@ import { defineConfig } from 'vite'
 import dts from 'vite-plugin-dts'
 
 export default defineConfig({
-    appType: "custom",
     plugins: [dts()],
     build: {
         target: "esnext",
@@ -13,6 +12,7 @@ export default defineConfig({
             formats: ['es', 'cjs']
         },
         rollupOptions: {
+            external: 'lodash',
             output: {
                 inlineDynamicImports: false,
                 preserveModules: true,

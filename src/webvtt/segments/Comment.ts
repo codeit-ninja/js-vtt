@@ -1,6 +1,6 @@
 import Segment from "./Segment";
 import InvalidCommentError from "../../errors/InvalidCommentError";
-import { isComment } from "../../utils";
+import { getComment, isComment } from "../../utils";
 import { escape } from 'lodash';
 
 export default class Comment extends Segment {
@@ -32,22 +32,22 @@ export default class Comment extends Segment {
      * some friends can watch it with their parents.
      * ```
      *
-     * @param comment       - See example
+     * @param str       - See example
      * @param error     - If false, method will not throw an error
      *
      * @throws {InvalidCommentError}
      */
-    public static fromString(comment: string, error = true) {
-        const isValidComment = isComment(comment);
+    public static fromString(str: string, error = true) {
+        const comment = getComment(str);
 
-        if ( ! isValidComment ) {
+        if ( ! comment ) {
             if ( ! error ) {
                 return false;
             }
 
-            throw new InvalidCommentError('Does not appear to be a valid comment.', comment);
+            throw new InvalidCommentError('Does not appear to be a valid comment.', str);
         }
 
-        return new Comment(isValidComment.groups!.text);
+        return new Comment(comment.text);
     }
 }

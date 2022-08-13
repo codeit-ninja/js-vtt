@@ -13,18 +13,18 @@
   },
   "exports": {
     ".": {
-      "default": "./dist/src/main.es.js",
-      "require": "./dist/src/main.cjs.js",
+      "default": "./dist/main.es.js",
+      "require": "./dist/main.cjs.js",
       "types": "./dist/main.d.ts"
     },
     "./utils": {
-      "default": "./dist/src/utils.es.js",
-      "require": "./dist/src/utils.cjs.js",
+      "default": "./dist/utils.es.js",
+      "require": "./dist/utils.cjs.js",
       "types": "./dist/utils.d.ts"
     },
     "./segments/*": {
-      "default": "./dist/src/webvtt/segments/*.es.js",
-      "require": "./dist/src/webvtt/segments/*.cjs.js",
+      "default": "./dist/webvtt/segments/*.es.js",
+      "require": "./dist/webvtt/segments/*.cjs.js",
       "types": "./dist/webvtt/segments/*.d.js"
     }
   },

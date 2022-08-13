@@ -1,8 +1,8 @@
-import { describe, it, beforeEach, expect } from 'vitest'
-import VTT from "../src/vtt";
-import Timings from "../src/webvtt/Timings";
-import Header from "../src/webvtt/segments/Header";
+import { beforeEach, describe, expect, it } from 'vitest';
 import InvalidVttError from "../src/errors/InvalidVttError";
+import VTT from "../src/vtt";
+import Header from "../src/webvtt/segments/Header";
+import Timings from "../src/webvtt/Timings";
 
 describe('Test VTT', () => {
     let vtt: VTT<{language: string, author: string}>;
@@ -78,7 +78,7 @@ describe('Test VTT', () => {
     it('Can add new cues and comments and generate a WebVTT or SRT string.', () => {
         const vtt = new VTT('Translation for movie');
 
-        vtt.addCue(1, 5, '- Here\'s what I love most\nabout food and diet.').text.italics('food').italics('diet')
+        vtt.addCue(1, 5, '- Here\'s what I love most\nabout <i>food</i> and <i>diet</i>.')
         vtt.addCue(5, 10, 'We all eat several times a day,\nand we\'re totally in charge')
         vtt.addComment(['This translation was done by Kyle so that', 'some friends can watch it with their parents.']);
         vtt.addCue(5, 10, 'We all eat several times a day,\nand we\'re totally in charge');
@@ -122,7 +122,7 @@ describe('Test VTT', () => {
     it('Can remove tags and comments.', () => {
         const vtt = new VTT('Translation for movie');
 
-        vtt.addCue(1, 5, '- Here\'s what I love most\nabout food and diet.').text.italics('food').italics('diet')
+        vtt.addCue(1, 5, '- Here\'s what I love most\nabout food and diet.')
         vtt.addCue(5, 10, 'We all eat several times a day,\nand we\'re totally in charge')
         vtt.addComment(['This translation was done by Kyle so that', 'some friends can watch it with their parents.']);
         vtt.addCue(5, 10, 'We all eat several times a day,\nand we\'re totally in charge');

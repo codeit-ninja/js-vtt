@@ -1,7 +1,6 @@
 import { describe, it, beforeEach, expect } from 'vitest'
 
 import Cue from '../src/webvtt/segments/Cue';
-import Text from '../src/webvtt/Text';
 import InvalidCueError from "../src/errors/InvalidCueError";
 
 describe('Cue', () => {
@@ -21,7 +20,7 @@ describe('Cue', () => {
         const expected = 'This text has a lot of tags which should be removed.';
         const cue = new Cue(0.244, 3.522, 'This <i>text</i> has a lot of <b>tags<b> which should be <c.class>removed</c>.');
 
-        expect(cue.removeTags().text.text).toBe(expected);
+        expect(cue.removeTags().text).toBe(expected);
     })
 
     it('Has properties.', () => {
@@ -29,7 +28,7 @@ describe('Cue', () => {
             identifier: 'Test ID',
             startTime: 0.244,
             endTime: 3.522,
-            text: expect.any(Text),
+            text: expect.any(String),
             settings: expect.objectContaining({
                 vertical: 'rl',
                 line: 5,
@@ -72,7 +71,7 @@ describe('Cue', () => {
             identifier: 'Another ID',
             startTime: 4.225,
             endTime: 6.522,
-            text: expect.any(Text)
+            text: expect.any(String)
         }
 
         expect(cue).toMatchObject(expected);
@@ -105,7 +104,7 @@ describe('Cue', () => {
             identifier: 'Test ID',
             startTime: 0.244,
             endTime: 3.522,
-            text: expect.any(Text)
+            text: expect.any(String)
         }
 
         expect(cue.clone()).toMatchObject(expected)
@@ -121,9 +120,7 @@ describe('Cue', () => {
             identifier: '14',
             startTime: 74.815,
             endTime: 78.114,
-            text: expect.objectContaining({
-                text: '- What?\n- Where are we now?'
-            })
+            text: '- What?\n- Where are we now?'
         })
     })
 

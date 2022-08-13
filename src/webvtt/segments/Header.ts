@@ -1,7 +1,7 @@
 import Segment from "./Segment";
-import {isHeader} from "../../utils";
+import {getHeader} from "../../utils";
 import InvalidHeaderError from "../../errors/InvalidHeaderError";
-import {fromPairs, toPairs} from 'lodash';
+import {toPairs} from 'lodash';
 
 export default class Header<Meta extends Record<string, any>> extends Segment {
     /**
@@ -40,37 +40,17 @@ export default class Header<Meta extends Record<string, any>> extends Segment {
         return 'WEBVTT' + (this._description ? ' ' + this._description : '') + (this._meta && Object.keys(this._meta).length ? '\n' + toPairs(this._meta).map(m => m.join(': ')).join('\n') : '');
     }
 
-    public static fromString(header: string, error = true) {
-        const isValidHeader = isHeader(header);
-        let meta: Record<string, any> = {};
+    public static fromString(str: string, error = true) {
+        const header = getHeader(str);
 
-        if ( ! isValidHeader ) {
+        if ( ! header ) {
             if ( ! error ) {
                 return false;
             }
 
-            throw new InvalidHeaderError(`Appears to be invalid, could not determine timing payload.`, header)
+            throw new InvalidHeaderError(`Appears to be invalid, could not determine timing payload.`, str)
         }
 
-        if ( isValidHeader.groups?.meta ) {
-            /**
-             * Converts a string from
-             *
-             * WEBVTT
-             * VTTKind: metadata
-             * VTTDataFormat: <metadata format>
-             * VTTDataHint: <metadata type>
-             *
-             * Into an object
-             * {
-             *     VTTKind: "metadata",
-             *     VTTDataFormat: "<metadata format>",
-             *     VTTDataHint: "<<metadata type>>"
-             * }
-             */
-            meta = fromPairs(isValidHeader.groups?.meta.split('\n').map(m => m.split(':').map(m => m.replace(/^\s/, ''))));
-        }
-
-        return new Header(isValidHeader.groups?.description, meta);
+        return new Header(header.description, header.meta);
     }
 }

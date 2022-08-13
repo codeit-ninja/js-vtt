@@ -17,6 +17,17 @@ export default class VTT<Meta extends Record<string, any>> {
         this._segments.push(this._header);
     }
 
+    /**
+     * Add segment.
+     * - `Cue`
+     * - `Comment`
+     * - `Style`
+     * 
+     * Or create your own segment, custom segments must extend base `Segment` class.
+     * 
+     * @param segment 
+     * @public 
+     */
     addSegment(segment: Segment) {
         /**
          * Cannot add a header segment, only 1 header segment can be present.
@@ -29,14 +40,28 @@ export default class VTT<Meta extends Record<string, any>> {
         this._segments.push(segment);
     }
 
-    addCue<T extends string>(startTime: number, endTime: number, text: T) {
-        const cue = new Cue<T>(startTime, endTime, text);
+    /**
+     * Add cue segment
+     * 
+     * @param startTime 
+     * @param endTime 
+     * @param text 
+     * @public
+     */
+    addCue(startTime: number, endTime: number, text: string) {
+        const cue = new Cue(startTime, endTime, text);
 
         this._segments.push(cue);
 
         return cue;
     }
 
+    /**
+     * Add comment segment
+     * 
+     * @param cmnt 
+     * @public 
+     */
     addComment( cmnt: string|string[] ) {
         const comment = new Comment(cmnt);
 
@@ -45,6 +70,11 @@ export default class VTT<Meta extends Record<string, any>> {
         return comment;
     }
 
+    /**
+     * Remove all markup from VTT.
+     * 
+     * @public
+     */
     removeTags() {
         for(const segment of this._segments) {
             if( segment instanceof Cue ) segment.removeTags();
@@ -53,12 +83,24 @@ export default class VTT<Meta extends Record<string, any>> {
         return this;
     }
 
+    /**
+     * 
+     * Remove all comment segments
+     * 
+     * @public 
+     */
     removeComments() {
         this._segments = this._segments.filter(s => ! ( s instanceof Comment ) );
 
         return this;
     }
 
+    /**
+     * Generates VTT or SRT string.
+     * 
+     * @param format 
+     * @returns 
+     */
     toString(format?: 'vtt'|'srt') {
         if (format === 'srt') {
             let i = 1;

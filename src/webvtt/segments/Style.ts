@@ -1,5 +1,5 @@
 import Segment from "./Segment";
-import {isStyle} from "../../utils";
+import {getStyle, isStyle} from "../../utils";
 import InvalidStyleError from "../../errors/InvalidStyleError";
 import {camelCase, fromPairs, kebabCase, toPairs} from "lodash";
 
@@ -29,26 +29,17 @@ export default class Style<T extends Partial<CSSStyleDeclaration> = {}> extends 
         return `STYLE\n::cue${(this.selector) ? `(${this.selector})` : ''} {\n${toPairs(this.styles).map(s => ['\t' + kebabCase(s[0]), s[1]].join(': ')).join(';\n')};\n}`;
     }
 
-    public static fromString(style: string, error = true) {
-        const isValidStyle = isStyle(style);
-        let styles: Partial<CSSStyleDeclaration> = {};
+    public static fromString(str: string, error = true) {
+        const style = getStyle(str);
 
-        if ( ! isValidStyle ) {
+        if ( ! style ) {
             if( ! error  ) {
                 return false;
             }
 
-            throw new InvalidStyleError('STYLE segment seems malformed, make sure its in a valid format.', style);
+            throw new InvalidStyleError('STYLE segment seems malformed, make sure its in a valid format.', str);
         }
 
-        if ( isValidStyle.groups?.styles ) {
-            styles = fromPairs(isValidStyle.groups.styles.replace(/ {2,}/g, '').split('\n').map(s => {
-                const keyValuePair = s.replace(': ', ':').replace(';', '').split(':');
-
-                return [camelCase(keyValuePair[0]), keyValuePair[1]];
-            }));
-        }
-
-        return new Style(styles, isValidStyle.groups?.selector);
+        return new Style(style.styles, style.selector);
     }
 }

@@ -1,8 +1,6 @@
-import Text from "../Text";
-
 import Segment from "./Segment";
 import InvalidCueError from "../../errors/InvalidCueError";
-import {hmsToSeconds, isCue, stripTags} from "../../utils";
+import {getCue, stripTags} from "../../utils";
 import Timings from "../Timings";
 import {isString} from "lodash";
 
@@ -14,7 +12,7 @@ export type CueSettings = {
     align?: 'start'|'center'|'end';
 }
 
-export default class Cue<T extends string = string, K extends CueSettings = {}> extends Segment {
+export default class Cue<T extends CueSettings = {}> extends Segment {
     /**
      * @protected
      */
@@ -26,7 +24,7 @@ export default class Cue<T extends string = string, K extends CueSettings = {}> 
     /**
      * @protected
      */
-    protected _text: Text<T>;
+    protected _text: string;
     /**
      * @protected
      */
@@ -45,12 +43,12 @@ export default class Cue<T extends string = string, K extends CueSettings = {}> 
      * @param identifier
      * @param settings
      */
-    constructor( startTime: number, endTime: number, text: T, identifier?: string|number, settings?: K ) {
+    constructor( startTime: number, endTime: number, text: string, identifier?: string|number, settings?: T ) {
         super();
 
         this._startTime = startTime;
         this._endTime = endTime;
-        this._text = new Text<T>(text);
+        this._text = text;
         this._identifier = identifier;
         this._settings = settings || {};
     }
@@ -139,7 +137,7 @@ export default class Cue<T extends string = string, K extends CueSettings = {}> 
      * Strips all specials tags from the text payload.
      */
     removeTags() {
-        this._text = new Text<T>(stripTags(this.text.toString()) as T);
+        this._text = stripTags(this.text);
 
         return this;
     }
@@ -153,13 +151,18 @@ export default class Cue<T extends string = string, K extends CueSettings = {}> 
     toString(format?: 'vtt'|'srt') {
         if (format === 'srt') {
             if ( ! this._identifier || isString(this._identifier) ) {
-                throw new InvalidCueError('SRT files must have an identifier, the identifier should represent a numeric counter', `${this._identifier}\n${this.timings.toString(format)}\n${this._text.toString(format)}`);
+                throw new InvalidCueError('SRT files must have an identifier, the identifier should represent a numeric counter', `${this._identifier}\n${this.timings.toString(format)}\n${this._text}`);
             }
 
-            return `${this._identifier}\n${this.timings.toString(format)}\n${this._text.toString(format)}`
+            /**
+             * Removes text formatting
+             */
+            this.removeTags();
+
+            return `${this._identifier}\n${this.timings.toString(format)}\n${this.text}`
         }
 
-        return `${this._identifier !== undefined ? this._identifier + '\n' : ''}${this.timings.toString()}\n${this._text.toString()}`
+        return `${this._identifier !== undefined ? this._identifier + '\n' : ''}${this.timings.toString()}\n${this._text}`
     }
 
     /**
@@ -196,8 +199,22 @@ export default class Cue<T extends string = string, K extends CueSettings = {}> 
      *
      * @param text
      */
-    setText(text: T) {
-        this._text = new Text<T>(text);
+    setText(text: string) {
+        this._text = text;
+
+        return this;
+    }
+
+    /**
+     * Sets JSON object as text payload
+     * 
+     * @param meta 
+     * @returns 
+     * 
+     * @link http://wiki.webmproject.org/webm-metadata/temporal-metadata/webvtt-metadata
+     */
+    setMeta(meta: object) {
+        this._text = JSON.stringify(meta, null, 4);
 
         return this;
     }
@@ -249,24 +266,29 @@ export default class Cue<T extends string = string, K extends CueSettings = {}> 
      * about <i>food</i> and <i>diet</i>.
      * ```
      *
-     * @param cue       - See example
+     * @param str       - See example
      * @param error     - If false, method will not throw an error
      * @throws {InvalidCueError}
      */
-    public static fromString(cue: string, error = true) {
-        const isValidCue = isCue(cue)
+    public static fromString(str: string, error = true) {
+        const cue = getCue(str);
 
-        if ( ! isValidCue ) {
+        if ( ! cue ) {
             if ( ! error ) {
                 return false;
             }
 
-            throw new InvalidCueError(`Cue seems malformed, make sure the cue is in a valid format.\n\nExpected:\nid?\nhh:mm:ss.ms --> hh:mm:ss.ms\ntext_payload\n\n`, cue);
+            throw new InvalidCueError(`
+Cue seems malformed, make sure the cue is in a valid format.
+            
+Expected:
+id?
+hh:mm:ss.ms --> hh:mm:ss.ms
+text_payload
+            
+            `, str);
         }
 
-        const startTime = isValidCue!.groups!.timings.split(' --> ')[0];
-        const endTime = isValidCue!.groups!.timings.split(' --> ')[1];
-
-        return new Cue(hmsToSeconds(startTime), hmsToSeconds(endTime), isValidCue!.groups!.text, isValidCue!.groups!.identifier);
+        return new Cue(cue.startTime, cue.endTime, cue.text, cue.identifier);
     }
 }

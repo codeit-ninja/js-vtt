@@ -1,10 +1,10 @@
-import {SEGMENT_COMMENT_REGEX, SEGMENT_CUE_REGEX, SEGMENT_HEADER_REGEX, SEGMENT_STYLE_REGEX} from "./constants";
+import {SEGMENT_COMMENT_REGEX, SEGMENT_CUE_REGEX, SEGMENT_HEADER_REGEX, SEGMENT_STYLE_REGEX, VTT_VALIDATION_REGEX} from "./constants";
 import Segment from "./webvtt/segments/Segment";
 import Cue, {CueSettings} from "./webvtt/segments/Cue";
 import Comment from "./webvtt/segments/Comment";
 import Header from "./webvtt/segments/Header";
 import VTT from "./vtt";
-import {toPairs} from "lodash";
+import {camelCase, fromPairs, isEmpty, toPairs} from "lodash";
 import Style from "./webvtt/segments/Style";
 
 export function createSegments( segments: string[] ) {
@@ -93,11 +93,93 @@ export function fromSrt(srt: string) {
     return VTT.fromString(srt);
 }
 
-export const isVtt = (str: string) => /^WEBVTT|^\uFEFFWEBVTT/.test(str);
-export const isHeader = (segment: string) => segment.match(SEGMENT_HEADER_REGEX);
-export const isCue = (segment: string) => segment.match(SEGMENT_CUE_REGEX);
-export const isComment = (segment: string) => segment.match(SEGMENT_COMMENT_REGEX);
-export const isStyle = (segment: string) => segment.match(SEGMENT_STYLE_REGEX);
+export const isVtt = (str: string) => VTT_VALIDATION_REGEX.test(str);
+export const isHeader = (segment: string) => SEGMENT_HEADER_REGEX.test(segment);
+export const isCue = (segment: string) => SEGMENT_CUE_REGEX.test(segment);
+export const isComment = (segment: string) => SEGMENT_COMMENT_REGEX.test(segment);
+export const isStyle = (segment: string) => SEGMENT_STYLE_REGEX.test(segment);
+
+export const getHeader = (segment: string) => {
+    if( ! isHeader(segment) ) {
+        return false;
+    }
+
+    const { description, meta } = segment.match(SEGMENT_HEADER_REGEX)!.groups!;
+    let metaObject: Record<string, any> = {};
+
+    if ( meta ) {
+        /**
+         * Converts a string from
+         *
+         * WEBVTT
+         * VTTKind: metadata
+         * VTTDataFormat: <metadata format>
+         * VTTDataHint: <metadata type>
+         *
+         * Into an object
+         * {
+         *     VTTKind: "metadata",
+         *     VTTDataFormat: "<metadata format>",
+         *     VTTDataHint: "<<metadata type>>"
+         * }
+         */
+        metaObject = fromPairs(meta.split('\n').map(m => m.split(':').map(m => m.replace(/^\s/, ''))));
+    }
+
+    return {
+        description: description,
+        meta: isEmpty(metaObject) ? undefined : metaObject
+    }
+}
+export const getCue = (segment: string) => {
+    if( ! isCue(segment) ) {
+        return false;
+    }
+
+    const { identifier, timings, text } = segment.match(SEGMENT_CUE_REGEX)!.groups!;
+
+    const startTime = timings.split(' --> ')[0];
+    const endTime = timings.split(' --> ')[1];
+
+    return {
+        identifier: identifier,
+        startTime: hmsToSeconds(startTime),
+        endTime: hmsToSeconds(endTime),
+        text: text
+    }
+}
+export const getComment = (segment: string) => {
+    if( ! isComment(segment) ) {
+        return false;
+    }
+
+    const { text } = segment.match(SEGMENT_COMMENT_REGEX)!.groups!;
+
+    return {
+        text: text
+    }
+}
+export const getStyle = (segment: string) => {
+    if( ! isStyle(segment) ) {
+        return false;
+    }
+
+    const { styles, selector } = segment.match(SEGMENT_STYLE_REGEX)!.groups!;
+    const stylesObject: Partial<CSSStyleDeclaration> = fromPairs(styles.replace(/ {2,}/g, '').split('\n').map(s => {
+        const keyValuePair = s.replace(': ', ':').replace(';', '').split(':');
+
+        return [camelCase(keyValuePair[0]), keyValuePair[1]];
+    }));
+
+    return {
+        styles: stylesObject,
+        selector: selector
+    }
+}
+
 export const toVttTimingString = (startTime: number, endTime: number, cueSettings?: CueSettings) => secondsToHms(startTime) + ' --> ' + secondsToHms(endTime) + (cueSettings ? ' ' + toPairs(cueSettings).map(s => s.join(':')).join(' ') : '');
 export const toSrtTimingString = (startTime: number, endTime: number) => toVttTimingString(startTime, endTime).replaceAll('.', ',');
 export const stripTags = (str: string) => str.replace(/<\/?[^>]+(>|$)/g, "");
+export const createTag = (type: 'b'|'u'|'i'|'v'|'c') => {
+
+}
