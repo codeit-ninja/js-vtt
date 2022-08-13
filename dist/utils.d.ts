@@ -31,10 +31,27 @@ export declare function vtt2srt(vtt: string): string;
 export declare function srt2vtt(srt: string): string;
 export declare function fromSrt(srt: string): VTT<{}>;
 export declare const isVtt: (str: string) => boolean;
-export declare const isHeader: (segment: string) => RegExpMatchArray | null;
-export declare const isCue: (segment: string) => RegExpMatchArray | null;
-export declare const isComment: (segment: string) => RegExpMatchArray | null;
-export declare const isStyle: (segment: string) => RegExpMatchArray | null;
+export declare const isHeader: (segment: string) => boolean;
+export declare const isCue: (segment: string) => boolean;
+export declare const isComment: (segment: string) => boolean;
+export declare const isStyle: (segment: string) => boolean;
+export declare const getHeader: (segment: string) => false | {
+    description: string;
+    meta: Record<string, any> | undefined;
+};
+export declare const getCue: (segment: string) => false | {
+    identifier: string;
+    startTime: number;
+    endTime: number;
+    text: string;
+};
+export declare const getComment: (segment: string) => false | {
+    text: string;
+};
+export declare const getStyle: (segment: string) => false | {
+    styles: Partial<CSSStyleDeclaration>;
+    selector: string;
+};
 export declare const toVttTimingString: (startTime: number, endTime: number, cueSettings?: CueSettings | undefined) => string;
 export declare const toSrtTimingString: (startTime: number, endTime: number) => string;
 export declare const stripTags: (str: string) => string;

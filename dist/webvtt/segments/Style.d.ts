@@ -15,5 +15,5 @@ export default class Style<T extends Partial<CSSStyleDeclaration> = {}> extends 
     get styles(): T | undefined;
     get selector(): string | undefined;
     toString(): string;
-    static fromString(style: string, error?: boolean): false | Style<Partial<CSSStyleDeclaration>>;
+    static fromString(str: string, error?: boolean): false | Style<Partial<CSSStyleDeclaration>>;
 }

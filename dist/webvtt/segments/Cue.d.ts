@@ -1,4 +1,3 @@
-import Text from "../Text";
 import Segment from "./Segment";
 import Timings from "../Timings";
 export declare type CueSettings = {
@@ -8,7 +7,7 @@ export declare type CueSettings = {
     size?: string;
     align?: 'start' | 'center' | 'end';
 };
-export default class Cue<T extends string = string, K extends CueSettings = {}> extends Segment {
+export default class Cue<T extends CueSettings = {}> extends Segment {
     /**
      * @protected
      */
@@ -20,7 +19,7 @@ export default class Cue<T extends string = string, K extends CueSettings = {}> 
     /**
      * @protected
      */
-    protected _text: Text<T>;
+    protected _text: string;
     /**
      * @protected
      */
@@ -38,7 +37,7 @@ export default class Cue<T extends string = string, K extends CueSettings = {}> 
      * @param identifier
      * @param settings
      */
-    constructor(startTime: number, endTime: number, text: T, identifier?: string | number, settings?: K);
+    constructor(startTime: number, endTime: number, text: string, identifier?: string | number, settings?: T);
     /**
      * Indicates that the text will be displayed vertically
      * rather than horizontally, such as in some Asian languages.
@@ -108,7 +107,7 @@ export default class Cue<T extends string = string, K extends CueSettings = {}> 
     /**
      * Clones current Cue.
      */
-    clone(): Cue<T, {}>;
+    clone(): Cue<{}>;
     /**
      * Set start time
      *
@@ -126,7 +125,16 @@ export default class Cue<T extends string = string, K extends CueSettings = {}> 
      *
      * @param text
      */
-    setText(text: T): this;
+    setText(text: string): this;
+    /**
+     * Sets JSON object as text payload
+     *
+     * @param meta
+     * @returns
+     *
+     * @link http://wiki.webmproject.org/webm-metadata/temporal-metadata/webvtt-metadata
+     */
+    setMeta(meta: object): this;
     /**
      * The identifier is a name that identifies the cue.
      * It can be used to reference the cue from a script.
@@ -138,7 +146,7 @@ export default class Cue<T extends string = string, K extends CueSettings = {}> 
     setIdentifier(identifier: string | number): this;
     get startTime(): number;
     get endTime(): number;
-    get text(): Text<T>;
+    get text(): string;
     get identifier(): string | number | undefined;
     get settings(): CueSettings;
     get timings(): Omit<Timings, 'resync'>;
@@ -151,9 +159,9 @@ export default class Cue<T extends string = string, K extends CueSettings = {}> 
      * about <i>food</i> and <i>diet</i>.
      * ```
      *
-     * @param cue       - See example
+     * @param str       - See example
      * @param error     - If false, method will not throw an error
      * @throws {InvalidCueError}
      */
-    static fromString(cue: string, error?: boolean): false | Cue<string, {}>;
+    static fromString(str: string, error?: boolean): false | Cue<{}>;
 }

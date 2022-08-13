@@ -11,19 +11,19 @@ export default class Timings {
      *
      * @param ms
      */
-    shift(ms: number): Cue<string, {}> | Cue<string, {}>[];
+    shift(ms: number): Cue<{}> | Cue<{}>[];
     /**
      * Shift `startTime` only
      *
      * @param ms    - milliseconds
      */
-    shiftStart(ms: number): Cue<string, {}> | Cue<string, {}>[];
+    shiftStart(ms: number): Cue<{}> | Cue<{}>[];
     /**
      * Shift `endTime` only
      *
      * @param ms    - milliseconds
      */
-    shiftEnd(ms: number): Cue<string, {}> | Cue<string, {}>[];
+    shiftEnd(ms: number): Cue<{}> | Cue<{}>[];
     /**
      * Resynchronizes subtitles which were created for 'x' frames per second
      * into the desired 'x' frames per second.
@@ -45,7 +45,7 @@ export default class Timings {
      * @param segment
      * @protected
      */
-    protected update(timings: TimingsSettings, segment: Cue): Cue<string, {}> | Cue<string, {}>[];
+    protected update(timings: TimingsSettings, segment: Cue): Cue<{}> | Cue<{}>[];
     /**
      * Update timings for an `array` of `cues`
      *
@@ -53,7 +53,7 @@ export default class Timings {
      * @param segments
      * @protected
      */
-    protected updateAll(timings: TimingsSettings, segments: Cue[]): Cue<string, {}>[];
+    protected updateAll(timings: TimingsSettings, segments: Cue[]): Cue<{}>[];
     /**
      * Internal function which invokes `update` or `updateAll` based on input
      * So you don't have to perform checks each time to determine
@@ -62,6 +62,6 @@ export default class Timings {
      * @param timings
      * @protected
      */
-    protected run(timings: TimingsSettings): Cue<string, {}> | Cue<string, {}>[];
+    protected run(timings: TimingsSettings): Cue<{}> | Cue<{}>[];
 }
 export {};

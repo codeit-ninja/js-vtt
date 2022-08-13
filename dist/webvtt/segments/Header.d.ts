@@ -17,5 +17,5 @@ export default class Header<Meta extends Record<string, any>> extends Segment {
     setDescription(description: string): void;
     setMeta<Meta extends Record<string, any>>(meta: Meta): Meta;
     toString(): string;
-    static fromString(header: string, error?: boolean): false | Header<Record<string, any>>;
+    static fromString(str: string, error?: boolean): false | Header<Record<string, any>>;
 }

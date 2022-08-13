@@ -180,6 +180,3 @@ export const getStyle = (segment: string) => {
 export const toVttTimingString = (startTime: number, endTime: number, cueSettings?: CueSettings) => secondsToHms(startTime) + ' --> ' + secondsToHms(endTime) + (cueSettings ? ' ' + toPairs(cueSettings).map(s => s.join(':')).join(' ') : '');
 export const toSrtTimingString = (startTime: number, endTime: number) => toVttTimingString(startTime, endTime).replaceAll('.', ',');
 export const stripTags = (str: string) => str.replace(/<\/?[^>]+(>|$)/g, "");
-export const createTag = (type: 'b'|'u'|'i'|'v'|'c') => {
-
-}

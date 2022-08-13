@@ -19,10 +19,10 @@ export default class Comment extends Segment {
      * some friends can watch it with their parents.
      * ```
      *
-     * @param comment       - See example
+     * @param str       - See example
      * @param error     - If false, method will not throw an error
      *
      * @throws {InvalidCommentError}
      */
-    static fromString(comment: string, error?: boolean): false | Comment;
+    static fromString(str: string, error?: boolean): false | Comment;
 }
