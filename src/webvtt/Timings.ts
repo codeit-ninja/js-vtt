@@ -1,5 +1,5 @@
 import Cue from "./segments/Cue";
-import {isArray} from "lodash";
+import {isArray} from "lodash-es";
 import {toSrtTimingString, toVttTimingString} from "../utils";
 
 type TimingsSettings = {

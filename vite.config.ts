@@ -12,7 +12,6 @@ export default defineConfig({
             formats: ['es', 'cjs']
         },
         rollupOptions: {
-            external: 'lodash',
             output: {
                 inlineDynamicImports: false,
                 preserveModules: true,

@@ -1,7 +1,7 @@
 import Segment from "./Segment";
 import {getHeader} from "../../utils";
 import InvalidHeaderError from "../../errors/InvalidHeaderError";
-import {toPairs} from 'lodash';
+import {toPairs} from 'lodash-es';
 
 export default class Header<Meta extends Record<string, any>> extends Segment {
     /**

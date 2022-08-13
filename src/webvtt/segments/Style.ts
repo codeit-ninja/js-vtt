@@ -1,7 +1,7 @@
 import Segment from "./Segment";
 import {getStyle} from "../../utils";
 import InvalidStyleError from "../../errors/InvalidStyleError";
-import {kebabCase, toPairs} from "lodash";
+import {kebabCase, toPairs} from "lodash-es";
 
 export default class Style<T extends Partial<CSSStyleDeclaration> = {}> extends Segment {
     /**

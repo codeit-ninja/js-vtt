@@ -4,7 +4,7 @@ import Cue, {CueSettings} from "./webvtt/segments/Cue";
 import Comment from "./webvtt/segments/Comment";
 import Header from "./webvtt/segments/Header";
 import VTT from "./vtt";
-import {camelCase, fromPairs, isEmpty, toPairs} from "lodash";
+import {camelCase, fromPairs, isEmpty, toPairs} from "lodash-es";
 import Style from "./webvtt/segments/Style";
 
 export function createSegments( segments: string[] ) {

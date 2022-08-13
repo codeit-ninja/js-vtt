@@ -13,18 +13,18 @@
   },
   "exports": {
     ".": {
-      "default": "./dist/main.es.js",
-      "require": "./dist/main.cjs.js",
+      "default": "./dist/src/main.es.js",
+      "require": "./dist/src/main.cjs.js",
       "types": "./dist/main.d.ts"
     },
     "./utils": {
-      "default": "./dist/utils.es.js",
-      "require": "./dist/utils.cjs.js",
+      "default": "./dist/src/utils.es.js",
+      "require": "./dist/src/utils.cjs.js",
       "types": "./dist/utils.d.ts"
     },
     "./segments/*": {
-      "default": "./dist/webvtt/segments/*.es.js",
-      "require": "./dist/webvtt/segments/*.cjs.js",
+      "default": "./dist/src/webvtt/segments/*.es.js",
+      "require": "./dist/src/webvtt/segments/*.cjs.js",
       "types": "./dist/webvtt/segments/*.d.js"
     }
   },
@@ -39,6 +39,7 @@
     }
   },
   "devDependencies": {
+    "@types/lodash-es": "^4.14.182",
     "@types/node": "^18.6.3",
     "c8": "^7.12.0",
     "ts-node": "^10.9.1",
@@ -51,7 +52,6 @@
     "vue": "^3.2.37"
   },
   "dependencies": {
-    "@types/lodash": "^4.14.182",
-    "lodash": "^4.17.21"
+    "lodash-es": "^4.17.21"
   }
 }

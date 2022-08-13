@@ -1,0 +1,3 @@
+"use strict";const i=require("./Segment.cjs.js"),n=require("../../utils.cjs.js"),o=require("../../errors/InvalidHeaderError.cjs.js"),a=require("../../../node_modules/lodash-es/toPairs.cjs.js");class s extends i{constructor(e,t){super(),this._description=e,this._meta=t}get description(){return this._description}get meta(){return this._meta}setDescription(e){this._description=e}setMeta(e){return this._meta=e,e}toString(){return"WEBVTT"+(this._description?" "+this._description:"")+(this._meta&&Object.keys(this._meta).length?`
+`+a(this._meta).map(e=>e.join(": ")).join(`
+`):"")}static fromString(e,t=!0){const r=n.getHeader(e);if(!r){if(!t)return!1;throw new o("Appears to be invalid, could not determine timing payload.",e)}return new s(r.description,r.meta)}}module.exports=s;

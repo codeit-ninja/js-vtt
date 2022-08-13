@@ -1,7 +1,7 @@
 import Segment from "./Segment";
 import InvalidCommentError from "../../errors/InvalidCommentError";
 import { getComment } from "../../utils";
-import { escape } from 'lodash';
+import { escape } from 'lodash-es';
 
 export default class Comment extends Segment {
     /**

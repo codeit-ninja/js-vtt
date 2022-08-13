@@ -2,7 +2,7 @@ import Segment from "./Segment";
 import InvalidCueError from "../../errors/InvalidCueError";
 import {getCue, stripTags} from "../../utils";
 import Timings from "../Timings";
-import {isString} from "lodash";
+import {isString} from "lodash-es";
 
 export type CueSettings = {
     vertical?: 'rl'|'lr';
