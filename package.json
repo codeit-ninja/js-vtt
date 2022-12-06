@@ -33,7 +33,7 @@
       "utils": [
         "dist/utils.d.ts"
       ],
-      "semgnets/*": [
+      "segments/*": [
         "dist/webvtt/segments/*.d.ts"
       ]
     }
