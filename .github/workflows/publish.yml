@@ -29,7 +29,7 @@ jobs:
             - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: 20
+                  node-version: 22
                   cache: 'pnpm'
 
             - name: Install dependencies
@@ -43,7 +43,7 @@ jobs:
 
             - name: Create Release Pull Request or Publish
               id: changesets
-              uses: changesets/action@v3
+              uses: changesets/action@v1
               with:
                   # This command will both publish to npm and create a GitHub release
                   publish: pnpm run release
