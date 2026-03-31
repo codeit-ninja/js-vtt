@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { VTT } from './vtt';
-import { Cue } from './segments/cue';
-import { Region } from './segments/region';
-import { Comment } from './segments/comment';
-import InvalidHeaderError from './errors/InvalidHeaderError';
+import { VTT } from '../src/vtt';
+import { Cue } from '../src/segments/cue';
+import { Region } from '../src/segments/region';
+import { Comment } from '../src/segments/comment';
+import InvalidHeaderError from '../src/errors/InvalidHeaderError';
 
 // ---------------------------------------------------------------------------
 // Real-world-ish WebVTT fixture strings

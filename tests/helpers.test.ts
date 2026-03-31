@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isHeader, isStyle, isNote, isCue, isRegion, isComment } from './helpers';
+import { isHeader, isStyle, isNote, isCue, isRegion, isComment } from '../src/helpers';
 
 describe('isHeader', () => {
     it('matches bare WEBVTT', () => {

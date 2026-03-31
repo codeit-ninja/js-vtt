@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Style } from './style';
-import InvalidStyleError from '../errors/InvalidStyleError';
+import { Style } from '../../src/segments/style';
+import InvalidStyleError from '../../src/errors/InvalidStyleError';
 
 describe('Style', () => {
     describe('constructor & getters', () => {

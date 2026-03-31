@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Header } from './header';
+import { Header } from '../../src/segments/header';
 
 describe('Header', () => {
     describe('constructor', () => {

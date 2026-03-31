@@ -1,1 +1,1 @@
-export class SrtValidationError extends Error {}
+export default class SrtValidationError extends Error {}

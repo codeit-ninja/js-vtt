@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Cue } from './cue';
-import InvalidCueError from '../errors/InvalidCueError';
+import { Cue } from '../../src/segments/cue';
+import InvalidCueError from '../../src/errors/InvalidCueError';
 
 describe('Cue', () => {
     describe('constructor & getters', () => {

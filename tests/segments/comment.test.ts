@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Comment } from './comment';
-import InvalidCommentError from '../errors/InvalidCommentError';
+import { Comment } from '../../src/segments/comment';
+import InvalidCommentError from '../../src/errors/InvalidCommentError';
 
 describe('Comment', () => {
     describe('constructor & getter', () => {

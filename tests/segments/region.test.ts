@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Region } from './region';
-import InvalidRegionError from '../errors/InvalidRegionError';
+import { Region } from '../../src/segments/region';
+import InvalidRegionError from '../../src/errors/InvalidRegionError';
 
 describe('Region', () => {
     describe('constructor & getters', () => {
