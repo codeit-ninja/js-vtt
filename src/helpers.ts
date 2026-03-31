@@ -1,5 +1,5 @@
 export const isHeader = (line: string) => {
-    return /^WEBVTT/.test(line) || /^\uFEFFWEBVTT/.test(line);
+    return /^(?:\uFEFF)?WEBVTT(?:[\t \n]|$)/.test(line);
 };
 
 export const isStyle = (line: string) => {
@@ -11,7 +11,9 @@ export const isNote = (line: string) => {
 };
 
 export const isCue = (str: string) => {
-    return /^(?:[^\n]+\n)?\d{2}:\d{2}:\d{2}\.\d{3}\s+-->\s+\d{2}:\d{2}:\d{2}\.\d{3}/.test(str);
+    return /^(?:[^\n]+\n)?(?:\d+:)?\d{2}:\d{2}\.\d{3}\s+-->\s+(?:\d+:)?\d{2}:\d{2}\.\d{3}/.test(
+        str,
+    );
 };
 
 export const isRegion = (str: string) => {

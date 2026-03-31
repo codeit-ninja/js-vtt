@@ -158,7 +158,10 @@ export class Style extends Segment {
                     (rule) =>
                         `${rule.selectors.join(',\n')} {\n` +
                         Object.entries(rule.declarations)
-                            .map(([prop, value]) => `  ${prop}: ${value};`)
+                            .map(
+                                ([prop, value]) =>
+                                    `  ${prop.replace(/([A-Z])/g, (_, c) => `-${c.toLowerCase()}`)}: ${value};`,
+                            )
                             .join('\n') +
                         '\n}',
                 )

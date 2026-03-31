@@ -1,24 +1,24 @@
 import { Segment } from './segment';
 
-export class Header<Meta extends Record<string, string> = Record<string, string>> extends Segment {
-    #meta: Meta;
+export class Header extends Segment {
+    #meta: Record<string, string>;
     #description?: string;
 
-    constructor(description?: string, meta?: Meta) {
+    constructor(description?: string, meta?: Record<string, string>) {
         super();
         this.#description = description;
-        this.#meta = meta || ({} as Meta);
+        this.#meta = meta || {};
     }
 
     get description() {
         return this.#description;
     }
 
-    get meta() {
+    get meta(): Record<string, string> {
         return this.#meta;
     }
 
-    setMeta(meta: Meta) {
+    setMeta(meta: Record<string, string>) {
         this.#meta = meta;
     }
 
@@ -68,7 +68,14 @@ export class Header<Meta extends Record<string, string> = Record<string, string>
             description,
             meta
                 ? Object.fromEntries(
-                      meta.split('\n').map((line) => line.split(': ').map((part) => part.trim())),
+                      meta
+                          .split('\n')
+                          .filter((line) => line.trim())
+                          .map((line) => {
+                              const sep = line.indexOf(': ');
+                              if (sep === -1) return [line.trim(), ''];
+                              return [line.slice(0, sep).trim(), line.slice(sep + 2).trim()];
+                          }),
                   )
                 : undefined,
         );

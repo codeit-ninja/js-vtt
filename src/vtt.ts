@@ -1,5 +1,5 @@
 import InvalidHeaderError from './errors/InvalidHeaderError';
-import { isComment, isCue, isHeader, isRegion, isStyle } from './helpers';
+import { isNote, isCue, isHeader, isRegion, isStyle } from './helpers';
 import { Cue, Region } from './index';
 import { Header } from './segments/header';
 import { Segment } from './segments/segment';
@@ -8,9 +8,9 @@ import { Comment } from './segments/comment';
 import { CueSettings } from './segments/cue';
 import { RegionAnchor } from './segments/region';
 
-export class VTT<Meta extends Record<string, any> = Record<string, string>> {
+export class VTT {
     #segments: Segment[] = [];
-    #header: Header<Meta>;
+    #header: Header;
     /**
      * Initializes a new VTT instance with an optional description and metadata for the header.
      * The header is created and added as the first segment of the VTT instance.
@@ -18,8 +18,8 @@ export class VTT<Meta extends Record<string, any> = Record<string, string>> {
      * @param description - An optional string to set as the description in the header.
      * @param meta - An optional object containing key-value pairs to set as metadata in the header.
      */
-    constructor(description?: string, meta?: Meta) {
-        this.#header = new Header<Meta>(description, meta);
+    constructor(description?: string, meta?: Record<string, string>) {
+        this.#header = new Header(description, meta);
         this.#segments.push(this.#header);
     }
     /**
@@ -31,7 +31,7 @@ export class VTT<Meta extends Record<string, any> = Record<string, string>> {
      *
      * @returns The VTT instance with the updated header information, allowing for method chaining.
      */
-    setHeader(description?: string, meta?: Meta) {
+    setHeader(description?: string, meta?: Record<string, string>) {
         if (description) {
             this.#header.setDescription(description);
         }
@@ -256,7 +256,13 @@ export class VTT<Meta extends Record<string, any> = Record<string, string>> {
      * @returns A VTT instance constructed from the parsed string.
      */
     static fromString(str: string) {
-        const segments = str.split(/\n{2,}/).filter((s) => s.trim());
+        const segments = str
+            .replace(/^\uFEFF/, '')
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n')
+            .replace(new RegExp(String.fromCharCode(0), 'g'), '\uFFFD')
+            .split(/\n{2,}/)
+            .filter((s) => s.trim());
         const headerSegment = segments.shift()!;
 
         if (!isHeader(headerSegment)) {
@@ -279,7 +285,7 @@ export class VTT<Meta extends Record<string, any> = Record<string, string>> {
                 vtt.addSegment(Region.fromString(segment));
             }
 
-            if (isComment(segment)) {
+            if (isNote(segment)) {
                 vtt.addSegment(Comment.fromString(segment));
             }
         }
@@ -297,7 +303,7 @@ export class VTT<Meta extends Record<string, any> = Record<string, string>> {
         const vtt = new VTT(json.header.description, json.header.meta);
 
         for (const segment of json.segments) {
-            if ('selectors' in segment) {
+            if ('rules' in segment) {
                 vtt.addSegment(new Style(segment.rules));
             } else if ('startTime' in segment) {
                 vtt.addSegment(
@@ -309,7 +315,7 @@ export class VTT<Meta extends Record<string, any> = Record<string, string>> {
                         segment.settings,
                     ),
                 );
-            } else if ('width' in segment) {
+            } else if ('regionAnchor' in segment) {
                 vtt.addSegment(
                     new Region(
                         segment.id,
