@@ -1,0 +1,52 @@
+name: Release
+
+on:
+    push:
+        branches:
+            - main
+            - master
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+    release:
+        name: Release
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            pull-requests: write
+            id-token: write
+
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v4
+
+            - name: Install pnpm
+              uses: pnpm/action-setup@v3
+              with:
+                  version: 10
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: 'pnpm'
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Build project
+              run: pnpm run build
+
+            - name: Create Release Pull Request or Publish
+              id: changesets
+              uses: changesets/action@v3
+              with:
+                  # This command will both publish to npm and create a GitHub release
+                  publish: pnpm run release
+                  commit: 'chore(release): version packages'
+                  title: 'chore(release): version packages'
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  # Note: You need to create this secret in your GitHub repository
+                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

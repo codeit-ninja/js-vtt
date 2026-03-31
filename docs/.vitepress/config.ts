@@ -3,12 +3,12 @@ export default {
     description: 'JavaScript tools for WebVTT',
     themeConfig: {
         sidebar: [
-          {
-            text: 'Guide',
-            items: [
-              { text: 'Getting Started', link: '/guide/getting-started' },
-            ]
-          }
-        ]
-      }
-}
+            {
+                text: 'Guide',
+                items: [
+                    { text: 'Getting Started', link: '/guide/getting-started' },
+                ],
+            },
+        ],
+    },
+};

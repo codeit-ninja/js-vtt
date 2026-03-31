@@ -1,0 +1,141 @@
+# js-vtt
+
+A TypeScript library (v1.0.4-beta) for parsing, building, and manipulating WebVTT subtitle files.
+Published as an ESM-only npm package.
+
+## What it does
+
+- Parse `.vtt` strings, URLs, or JSON into a typed `VTT` object
+- Build WebVTT files programmatically via a fluent/chainable API
+- Serialize back to WebVTT or SRT format
+- Manipulate cue timings: shift, rescale, and sync frame rates
+- Validate the structure of a VTT file
+
+## Tech stack
+
+| Tool            | Purpose                                      |
+|-----------------|----------------------------------------------|
+| TypeScript 6    | Primary language; strict, ESM                |
+| pnpm            | Package manager                              |
+| tsdown          | Library bundler (outputs ESM + `.d.mts`)     |
+| Vitest          | Unit testing + coverage via @vitest/coverage-v8 |
+| ESLint 10       | Linting (typescript-eslint + prettier rules) |
+| Prettier 3      | Code formatting                              |
+| VitePress       | Documentation site (under docs/)            |
+| changesets      | Versioning and changelog management          |
+| tsx             | Dev/watch runner                             |
+| lodash-es       | Only runtime dependency                      |
+
+## Project structure
+
+```
+src/
+  index.ts             — Public entry point (re-exports everything)
+  vtt.ts               — Core VTT class
+  helpers.ts           — Regex-based segment type detectors
+  main.ts              — Dev scratch file
+  segments/
+    segment.ts         — Abstract base class for all segments
+    cue.ts             — Timed text cue (startTime, endTime, text, settings)
+    header.ts          — WEBVTT header with optional description and metadata
+    region.ts          — REGION block (id, width, lines, anchors, scroll)
+    style.ts           — STYLE block (CSS selectors + declarations)
+    comment.ts         — NOTE (comment) block
+    index.ts           — Re-exports all segment classes
+  errors/
+    CalledItWrongError.ts
+    InvalidCommentError.ts
+    InvalidCueError.ts
+    InvalidHeaderError.ts
+    InvalidRegionError.ts
+    InvalidStyleError.ts
+    InvalidVttError.ts
+    SrtValidationError.ts
+docs/
+  index.md
+  guide/getting-started.md
+```
+
+## Core API
+
+### VTT class (`src/vtt.ts`)
+
+```ts
+// Construction
+const vtt = new VTT(description?, meta?)
+
+// Fluent builders (all return `this` for chaining)
+vtt.setHeader(description?, meta?)
+vtt.addCue(startTime, endTime, text, identifier?, settings?)
+vtt.addRegion(id?, width?, lines?, regionAnchor?, viewportAnchor?, scroll?)
+vtt.addStyle(selectors, declarations)
+vtt.addComment(text)
+vtt.addSegment(segment)  // generic; accepts any Segment instance
+
+// Timing manipulation
+vtt.shiftTime(offsetSeconds)          // shift all cues by ±offset
+vtt.rescale(originalDuration, newDuration)  // scale timings proportionally
+vtt.syncFps(sourceFps, targetFps)     // remap timings across frame rates
+
+// Validation & serialization
+vtt.validate()              // returns boolean
+vtt.toJSON()                // returns plain object
+vtt.toString('vtt' | 'srt') // default 'vtt'
+
+// Static parsers
+VTT.fromString(str)         // parse WebVTT string
+VTT.fromURL(url)            // fetch and parse (returns Promise<VTT>)
+VTT.fromJSON(json)          // reconstruct from toJSON() output
+```
+
+### Segment hierarchy
+
+```
+Segment (abstract)
+  ├── Header   — WEBVTT line + optional description/metadata
+  ├── Cue      — timed subtitle block; supports VTT and SRT output
+  ├── Region   — positional region definition
+  ├── Style    — embedded CSS block
+  └── Comment  — NOTE block (stripped in SRT output)
+```
+
+All segments implement:
+- `toString(format?, index?)` — serialise to VTT or SRT string
+- `toJSON()` — plain-object representation
+- `isValid()` — structural validation
+- `static fromString(str)` — parse from raw block string
+
+### CueSettings type
+
+```ts
+type CueSettings = {
+  vertical?: 'rl' | 'lr';
+  line?: number | string;
+  position?: string;
+  size?: string;
+  align?: 'start' | 'center' | 'end';
+  region?: string;
+}
+```
+
+## Conventions
+
+- All source files use `.ts` extensions internally but import with `.js` extensions (Node ESM resolution)
+- Private class fields use the `#field` syntax
+- All public mutators return `this` to enable method chaining
+- Errors are typed custom classes in `src/errors/`
+- No CommonJS; ESM-only (`"type": "module"` in package.json)
+- Tests live alongside or near the source files and are run with `pnpm test`
+
+## Scripts
+
+```
+pnpm dev           # watch mode via tsx
+pnpm build         # bundle with tsdown
+pnpm test          # run vitest with coverage
+pnpm lint          # eslint
+pnpm format        # prettier
+pnpm docs:dev      # vitepress dev server
+pnpm changeset     # create a changeset
+pnpm release       # publish via changesets
+```

@@ -1,32 +1,14 @@
-/**
- *         _       _       
- *        (_)     (_)      
- *   _ __  _ _ __  _  __ _     
- *  | '_ \| | '_ \| |/ _` |    
- *  | | | | | | | | | (_| |    
- *  |_| |_|_|_| |_| |\__,_|    
- *               _/ |    
- *              |__/    
- */
-import { SEGMENT_COMMENT_REGEX, SEGMENT_CUE_REGEX, SEGMENT_STYLE_REGEX, SEGMENT_HEADER_REGEX } from "./constants";
-import VTT from "./vtt";
-import Timings from "./webvtt/Timings";
-import Segment from "./webvtt/segments/Segment";
-import Cue from "./webvtt/segments/Cue";
-import Comment from "./webvtt/segments/Comment";
-import Header from "./webvtt/segments/Header";
-import Style from "./webvtt/segments/Style";
+import { VTT } from './index.js';
 
-export {
-    SEGMENT_COMMENT_REGEX,
-    SEGMENT_CUE_REGEX,
-    SEGMENT_HEADER_REGEX,
-    SEGMENT_STYLE_REGEX,
-    VTT,
-    Cue,
-    Header,
-    Timings,
-    Style,
-    Segment,
-    Comment
-}
+VTT.fromURL(
+    'https://raw.githubusercontent.com/1c7/vtt-test-file/refs/heads/master/vtt%20files/2.%20No%20Index%20Number%2C%20download%20using%20youtube-dl.vtt',
+)
+    .then((vtt) => {
+        console.log(vtt.toJSON());
+    })
+    .catch((err) => {
+        console.error(err);
+    });
+
+// Implement extensive tests that makes sure that a webvtt with all possible things
+// from the spec passes, and also vtt files that only uses certain regions / settings passes.
