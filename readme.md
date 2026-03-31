@@ -1,7 +1,5 @@
 # js-vtt
 
-[![npm](https://img.shields.io/npm/v/js-vtt)](https://www.npmjs.com/package/js-vtt)
-
 A TypeScript library for parsing, building, and manipulating [WebVTT](https://www.w3.org/TR/webvtt1/) subtitle files. Supports both VTT and SRT output.
 
 ## Installation
