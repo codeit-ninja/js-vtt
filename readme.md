@@ -24,9 +24,7 @@ yarn add js-vtt
 ```ts
 import { VTT } from 'js-vtt';
 
-const vtt = new VTT()
-  .addCue(0, 3.5, 'Hello, world!')
-  .addCue(4, 7, 'This is a subtitle.');
+const vtt = new VTT().addCue(0, 3.5, 'Hello, world!').addCue(4, 7, 'This is a subtitle.');
 
 console.log(vtt.toString());
 // WEBVTT
@@ -45,11 +43,11 @@ console.log(vtt.toString());
 - [Parsing](#parsing)
 - [Building](#building)
 - [Segments](#segments)
-  - [Header](#header)
-  - [Cue](#cue)
-  - [Region](#region)
-  - [Style](#style)
-  - [Comment](#comment)
+    - [Header](#header)
+    - [Cue](#cue)
+    - [Region](#region)
+    - [Style](#style)
+    - [Comment](#comment)
 - [Timing utilities](#timing-utilities)
 - [Validation](#validation)
 - [Serialization](#serialization)
@@ -97,17 +95,17 @@ All builder methods return `this`, so they can be chained.
 import { VTT } from 'js-vtt';
 
 const vtt = new VTT('My subtitles')
-  .addCue(0, 2, 'First line')
-  .addCue(3, 6, 'Second line', 'cue-2')
-  .addComment('Translated by Jane')
-  .addStyle(['::cue'], { color: 'yellow' });
+    .addCue(0, 2, 'First line')
+    .addCue(3, 6, 'Second line', 'cue-2')
+    .addComment('Translated by Jane')
+    .addStyle(['::cue'], { color: 'yellow' });
 ```
 
 ### `new VTT(description?, meta?)`
 
-| Parameter     | Type                        | Description                              |
-|---------------|-----------------------------|------------------------------------------|
-| `description` | `string` (optional)         | Text placed on the `WEBVTT` header line  |
+| Parameter     | Type                                | Description                                       |
+| ------------- | ----------------------------------- | ------------------------------------------------- |
+| `description` | `string` (optional)                 | Text placed on the `WEBVTT` header line           |
 | `meta`        | `Record<string, string>` (optional) | Key-value metadata appended below the header line |
 
 ```ts
@@ -141,19 +139,19 @@ A cue is a timed block of subtitle text.
 
 #### `addCue(startTime, endTime, text, identifier?, settings?)`
 
-| Parameter    | Type                   | Description                                     |
-|--------------|------------------------|-------------------------------------------------|
-| `startTime`  | `number`               | Start time in **seconds**                       |
-| `endTime`    | `number`               | End time in **seconds**                         |
-| `text`       | `string`               | Subtitle text (may contain VTT markup tags)     |
-| `identifier` | `string \| number` (optional) | Cue identifier                           |
-| `settings`   | `CueSettings` (optional) | Positioning and layout settings               |
+| Parameter    | Type                          | Description                                 |
+| ------------ | ----------------------------- | ------------------------------------------- |
+| `startTime`  | `number`                      | Start time in **seconds**                   |
+| `endTime`    | `number`                      | End time in **seconds**                     |
+| `text`       | `string`                      | Subtitle text (may contain VTT markup tags) |
+| `identifier` | `string \| number` (optional) | Cue identifier                              |
+| `settings`   | `CueSettings` (optional)      | Positioning and layout settings             |
 
 ```ts
 vtt.addCue(10, 15, '<b>Bold text</b>', 'intro', {
-  align: 'center',
-  position: '50%',
-  size: '80%',
+    align: 'center',
+    position: '50%',
+    size: '80%',
 });
 ```
 
@@ -161,12 +159,12 @@ vtt.addCue(10, 15, '<b>Bold text</b>', 'intro', {
 
 ```ts
 type CueSettings = {
-  vertical?: 'rl' | 'lr';  // vertical text direction
-  line?: number | string;   // vertical position
-  position?: string;        // horizontal position (e.g. "50%")
-  size?: string;            // cue box width (e.g. "80%")
-  align?: 'start' | 'center' | 'end';
-  region?: string;          // ID of a REGION block
+    vertical?: 'rl' | 'lr'; // vertical text direction
+    line?: number | string; // vertical position
+    position?: string; // horizontal position (e.g. "50%")
+    size?: string; // cue box width (e.g. "80%")
+    align?: 'start' | 'center' | 'end';
+    region?: string; // ID of a REGION block
 };
 ```
 
@@ -193,14 +191,14 @@ Regions define named rectangular areas on screen for cue positioning.
 
 #### `addRegion(id?, width?, lines?, regionAnchor?, viewportAnchor?, scroll?)`
 
-| Parameter        | Type              | Description                                          |
-|------------------|-------------------|------------------------------------------------------|
-| `id`             | `string` (optional)  | Region identifier, referenced by cue settings     |
-| `width`          | `number` (optional)  | Width as a percentage (e.g. `40` for `40%`)        |
-| `lines`          | `number` (optional)  | Number of lines tall                               |
-| `regionAnchor`   | `[number, number]` (optional) | `[x%, y%]` anchor point within the region |
-| `viewportAnchor` | `[number, number]` (optional) | `[x%, y%]` anchor point within the viewport |
-| `scroll`         | `'up'` (optional)    | Scroll direction                                   |
+| Parameter        | Type                          | Description                                   |
+| ---------------- | ----------------------------- | --------------------------------------------- |
+| `id`             | `string` (optional)           | Region identifier, referenced by cue settings |
+| `width`          | `number` (optional)           | Width as a percentage (e.g. `40` for `40%`)   |
+| `lines`          | `number` (optional)           | Number of lines tall                          |
+| `regionAnchor`   | `[number, number]` (optional) | `[x%, y%]` anchor point within the region     |
+| `viewportAnchor` | `[number, number]` (optional) | `[x%, y%]` anchor point within the viewport   |
+| `scroll`         | `'up'` (optional)             | Scroll direction                              |
 
 ```ts
 vtt.addRegion('bottom', 40, 3, [0, 100], [10, 90], 'up');
@@ -223,9 +221,9 @@ Style blocks embed CSS that targets cue elements.
 
 #### `addStyle(selectors, declarations)`
 
-| Parameter      | Type                           | Description                              |
-|----------------|--------------------------------|------------------------------------------|
-| `selectors`    | `string[]`                     | CSS selectors (e.g. `['::cue']`)         |
+| Parameter      | Type                           | Description                                                                                                |
+| -------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `selectors`    | `string[]`                     | CSS selectors (e.g. `['::cue']`)                                                                           |
 | `declarations` | `Partial<CSSStyleDeclaration>` | Only [WebVTT-supported CSS properties](https://www.w3.org/TR/webvtt1/#the-cue-pseudo-element) are accepted |
 
 ```ts
@@ -279,8 +277,8 @@ All timing methods return `this` for chaining.
 Shifts all cue timings by `offset` seconds. Use a positive value to delay, negative to advance.
 
 ```ts
-vtt.shiftTime(5);   // delay all cues by 5 seconds
-vtt.shiftTime(-2);  // advance all cues by 2 seconds
+vtt.shiftTime(5); // delay all cues by 5 seconds
+vtt.shiftTime(-2); // advance all cues by 2 seconds
 ```
 
 ### `rescale(originalDuration, newDuration)`
@@ -311,7 +309,7 @@ Returns `true` if the header and all segments are structurally valid according t
 
 ```ts
 if (!vtt.validate()) {
-  console.error('VTT file has invalid segments');
+    console.error('VTT file has invalid segments');
 }
 ```
 
@@ -330,10 +328,10 @@ cue.isValid(); // false
 
 Serializes the VTT instance to a string.
 
-| `format` | Output                          |
-|----------|---------------------------------|
-| `'vtt'`  | WebVTT format **(default)**     |
-| `'srt'`  | SubRip (SRT) format             |
+| `format` | Output                      |
+| -------- | --------------------------- |
+| `'vtt'`  | WebVTT format **(default)** |
+| `'srt'`  | SubRip (SRT) format         |
 
 ```ts
 // WebVTT
@@ -364,26 +362,26 @@ Individual segments also have `toString()` and `toJSON()` methods.
 
 All errors extend the native `Error` class and include the offending segment string in the message for easy debugging.
 
-| Class                  | Thrown when                                |
-|------------------------|--------------------------------------------|
-| `InvalidHeaderError`   | `VTT.fromString()` receives a missing/malformed `WEBVTT` header |
-| `InvalidCueError`      | `Cue.fromString()` receives a malformed cue block |
-| `InvalidRegionError`   | `Region.fromString()` receives a malformed region block |
-| `InvalidStyleError`    | `Style.fromString()` receives a malformed style block |
-| `InvalidCommentError`  | `Comment.fromString()` receives a malformed NOTE block |
-| `InvalidVttError`      | General VTT-level validation failure       |
-| `SrtValidationError`   | SRT-specific validation failure            |
+| Class                 | Thrown when                                                     |
+| --------------------- | --------------------------------------------------------------- |
+| `InvalidHeaderError`  | `VTT.fromString()` receives a missing/malformed `WEBVTT` header |
+| `InvalidCueError`     | `Cue.fromString()` receives a malformed cue block               |
+| `InvalidRegionError`  | `Region.fromString()` receives a malformed region block         |
+| `InvalidStyleError`   | `Style.fromString()` receives a malformed style block           |
+| `InvalidCommentError` | `Comment.fromString()` receives a malformed NOTE block          |
+| `InvalidVttError`     | General VTT-level validation failure                            |
+| `SrtValidationError`  | SRT-specific validation failure                                 |
 
 ```ts
 import { VTT } from 'js-vtt';
 import { InvalidHeaderError } from 'js-vtt/segments/header'; // errors are co-located
 
 try {
-  VTT.fromString('not a vtt file');
+    VTT.fromString('not a vtt file');
 } catch (e) {
-  if (e instanceof InvalidHeaderError) {
-    console.error('Bad header:', e.message);
-  }
+    if (e instanceof InvalidHeaderError) {
+        console.error('Bad header:', e.message);
+    }
 }
 ```
 
