@@ -3,7 +3,7 @@ import { VTT } from '../src/vtt';
 import { Cue } from '../src/segments/cue';
 import { Region } from '../src/segments/region';
 import { Comment } from '../src/segments/comment';
-import InvalidHeaderError from '../src/errors/InvalidHeaderError';
+import InvalidVttError from '../src/errors/InvalidVttError';
 
 // ---------------------------------------------------------------------------
 // Real-world-ish WebVTT fixture strings
@@ -529,12 +529,12 @@ describe('VTT fromString()', () => {
         expect(vtt2.toJSON().segments.length).toBe(vtt1.toJSON().segments.length);
     });
 
-    it('throws InvalidHeaderError for a malformed header', () => {
-        expect(() => VTT.fromString('NOT A VTT FILE')).toThrow(InvalidHeaderError);
+    it('throws InvalidVttError for a malformed header', () => {
+        expect(() => VTT.fromString('NOT A VTT FILE')).toThrow(InvalidVttError);
     });
 
-    it('throws InvalidHeaderError for an empty string', () => {
-        expect(() => VTT.fromString('')).toThrow(InvalidHeaderError);
+    it('throws InvalidVttError for an empty string', () => {
+        expect(() => VTT.fromString('')).toThrow(InvalidVttError);
     });
 
     it('handles a file where cues have no blank line between NOTE and first cue', () => {
