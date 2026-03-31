@@ -2,9 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { VTT } from './vtt';
 import { Cue } from './segments/cue';
 import { Region } from './segments/region';
-import { Style } from './segments/style';
 import { Comment } from './segments/comment';
-import { Header } from './segments/header';
 import InvalidHeaderError from './errors/InvalidHeaderError';
 
 // ---------------------------------------------------------------------------
