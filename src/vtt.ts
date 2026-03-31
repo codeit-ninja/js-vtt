@@ -1,6 +1,5 @@
-import InvalidHeaderError from './errors/InvalidHeaderError';
 import { isNote, isCue, isHeader, isRegion, isStyle } from './helpers';
-import { Cue, Region } from './index';
+import { Cue, InvalidVttError, Region } from './index';
 import { Header } from './segments/header';
 import { Segment } from './segments/segment';
 import { CueCSSProperty, Style } from './segments/style';
@@ -266,7 +265,7 @@ export class VTT {
         const headerSegment = segments.shift()!;
 
         if (!isHeader(headerSegment)) {
-            throw new InvalidHeaderError('Invalid VTT file: Header is malformed', headerSegment);
+            throw new InvalidVttError('Invalid VTT file: Header is malformed', headerSegment);
         }
 
         const header = Header.fromString(headerSegment);

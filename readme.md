@@ -207,7 +207,13 @@ vtt.addRegion('bottom', 40, 3, [0, 100], [10, 90], 'up');
 import { Region } from 'js-vtt';
 
 const region = new Region();
-region.setId('top').setWidth(80).setLines(2);
+region
+    .setId('top')
+    .setWidth(80)
+    .setLines(2)
+    .setRegionAnchor([50, 100])
+    .setViewportAnchor([50, 90])
+    .setScroll('up');
 ```
 
 ---
@@ -218,17 +224,27 @@ Style blocks embed CSS that targets cue elements.
 
 #### `addStyle(selectors, declarations)`
 
-| Parameter      | Type                           | Description                                                                                                |
-| -------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `selectors`    | `string[]`                     | CSS selectors (e.g. `['::cue']`)                                                                           |
-| `declarations` | `Partial<CSSStyleDeclaration>` | Only [WebVTT-supported CSS properties](https://www.w3.org/TR/webvtt1/#the-cue-pseudo-element) are accepted |
+| Parameter      | Type                                                 | Description                                                                                                |
+| -------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `selectors`    | `string[]`                                           | CSS selectors (e.g. `['::cue']`)                                                                           |
+| `declarations` | `Partial<Pick<CSSStyleDeclaration, CueCSSProperty>>` | Only [WebVTT-supported CSS properties](https://www.w3.org/TR/webvtt1/#the-cue-pseudo-element) are accepted |
 
 ```ts
 vtt.addStyle(['::cue'], { color: 'white', backgroundColor: 'rgba(0,0,0,0.8)' });
 vtt.addStyle(['::cue(b)'], { fontWeight: 'bold', color: 'yellow' });
 ```
 
-Supported CSS properties include: `color`, `opacity`, `background`, `backgroundColor`, `font`, `fontSize`, `fontFamily`, `fontWeight`, `fontStyle`, `textDecoration`, `textShadow`, `outline`, `lineHeight`, `whiteSpace`, `textCombineUpright`, `rubyPosition`, and their sub-properties.
+Supported CSS properties include: `color`, `opacity`, `visibility`, `background`, `backgroundColor`, `font`, `fontSize`, `fontFamily`, `fontWeight`, `fontStyle`, `fontVariant`, `fontStretch`, `textDecoration`, `textShadow`, `outline`, `lineHeight`, `whiteSpace`, `textCombineUpright`, `rubyPosition`, and their sub-properties.
+
+#### Working with `Style` instances directly
+
+```ts
+import { Style } from 'js-vtt';
+
+const style = new Style([{ selectors: ['::cue'], declarations: { color: 'white' } }]);
+style.addRule({ selectors: ['::cue(b)'], declarations: { fontWeight: 'bold' } });
+style.removeRule(0); // remove rule at index 0
+```
 
 ---
 
@@ -370,13 +386,12 @@ All errors extend the native `Error` class and include the offending segment str
 | `SrtValidationError`  | SRT-specific validation failure                                 |
 
 ```ts
-import { VTT } from 'js-vtt';
-import { InvalidHeaderError } from 'js-vtt/segments/header'; // errors are co-located
+import { VTT, InvalidVttError } from 'js-vtt';
 
 try {
     VTT.fromString('not a vtt file');
 } catch (e) {
-    if (e instanceof InvalidHeaderError) {
+    if (e instanceof InvalidVttError) {
         console.error('Bad header:', e.message);
     }
 }
