@@ -20,6 +20,13 @@
 - Fixed `fromSRT()` incorrectly including cue sequence numbers in the subtitle text
 - Fixed `fromSRT()` emitting raw seconds instead of `HH:MM:SS.mmm` timestamps
 
+## 2.1.1
+
+### Patch Changes
+
+- 5e3550c: add getters for segments and header
+- 0df93e0: Add getCues method to return all cues
+
 ## 2.1.0
 
 ### Minor Changes
