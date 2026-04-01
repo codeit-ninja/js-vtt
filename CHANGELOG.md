@@ -1,5 +1,11 @@
 # js-vtt
 
+## 2.2.1
+
+### Patch Changes
+
+- 58a42ee: Add license and link repo in package
+
 ## 2.2.0
 
 ### Minor Changes
