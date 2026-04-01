@@ -1,5 +1,12 @@
 # js-vtt
 
+## 2.1.1
+
+### Patch Changes
+
+- 5e3550c: add getters for segments and header
+- 0df93e0: Add getCues method to return all cues
+
 ## 2.1.0
 
 ### Minor Changes
