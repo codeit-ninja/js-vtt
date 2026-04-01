@@ -11,6 +11,24 @@ export class VTT {
     #segments: Segment[] = [];
     #header: Header;
     /**
+     * Gets the list of segments in the VTT instance, which includes cues, regions, styles, and comments.
+     * The header segment is included as the first element in this list.
+     *
+     * @returns An array of Segment instances representing all segments in the VTT file, including the header as the first segment.
+     */
+    get segments() {
+        return this.#segments;
+    }
+    /**
+     * Gets the header segment of the VTT instance, which contains metadata and description information about the VTT file.
+     * The header is the first segment in the internal list of segments and is initialized when a new VTT instance is created.
+     *
+     * @returns The Header instance representing the header segment of the VTT file.
+     */
+    get header() {
+        return this.#header;
+    }
+    /**
      * Initializes a new VTT instance with an optional description and metadata for the header.
      * The header is created and added as the first segment of the VTT instance.
      *
