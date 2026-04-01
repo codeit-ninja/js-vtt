@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Cue, VTT } from './index.js';
 
 VTT.fromURL(
