@@ -90,9 +90,9 @@ export class VTT {
         identifier?: string | number,
         settings?: CueSettings,
     ) {
-        const cue = new Cue(startTime, endTime, text, identifier, settings);
-        this.addSegment(cue);
-        return this;
+        return this.addSegment(
+            new Cue(startTime, endTime, text, identifier, settings),
+        );
     }
     /**
      * Adds a new region to the VTT instance.
@@ -115,9 +115,9 @@ export class VTT {
         viewportAnchor?: RegionAnchor,
         scroll?: 'up',
     ) {
-        const region = new Region(id, width, lines, regionAnchor, viewportAnchor, scroll);
-        this.addSegment(region);
-        return this;
+        return this.addSegment(
+            new Region(id, width, lines, regionAnchor, viewportAnchor, scroll),
+        );
     }
     /**
      * Adds a new style segment to the VTT instance.
@@ -132,9 +132,7 @@ export class VTT {
         selectors: string[],
         declarations: Partial<Pick<CSSStyleDeclaration, CueCSSProperty>>,
     ) {
-        const style = new Style([{ selectors, declarations }]);
-        this.addSegment(style);
-        return this;
+        return this.addSegment(new Style([{ selectors, declarations }]));
     }
     /**
      * Adds a new comment segment to the VTT instance.
@@ -145,9 +143,7 @@ export class VTT {
      * @returns The VTT instance with the new comment segment added, allowing for method chaining.
      */
     addComment(text: string) {
-        const comment = new Comment(text);
-        this.addSegment(comment);
-        return this;
+        return this.addSegment(new Comment(text));
     }
     /**
      * Shifts all cue timings by a specified offset in seconds. Positive values will delay cues, while negative values will advance them.
@@ -263,7 +259,9 @@ export class VTT {
      * @returns An array of Cue instances representing the cues that are active within the specified time range.
      */
     getCuesByTime(start: number, end: number) {
-        return this.getCues().filter((cue) => cue.startTime < end && cue.endTime > start);
+        return this.getCues().filter(
+            (cue) => cue.startTime < end && cue.endTime > start,
+        );
     }
     /**
      * Retrieves a cue segment by its identifier from the VTT instance.
@@ -307,7 +305,12 @@ export class VTT {
      *
      * @returns The TextTrack instance that was created and populated with cues from the VTT instance.
      */
-    attachToVideo(video: HTMLVideoElement, kind: TextTrackKind, label?: string, language?: string) {
+    attachToVideo(
+        video: HTMLVideoElement,
+        kind: TextTrackKind,
+        label?: string,
+        language?: string,
+    ) {
         const track = video.addTextTrack(kind, label, language);
 
         for (const cue of this.getCues()) {
@@ -369,7 +372,10 @@ export class VTT {
         const headerSegment = segments.shift()!;
 
         if (!isHeader(headerSegment)) {
-            throw new InvalidVttError('Invalid VTT file: Header is malformed', headerSegment);
+            throw new InvalidVttError(
+                'Invalid VTT file: Header is malformed',
+                headerSegment,
+            );
         }
 
         const header = Header.fromString(headerSegment);
@@ -393,7 +399,10 @@ export class VTT {
             }
         }
         if (!vtt.validate()) {
-            throw new InvalidVttError('Invalid VTT file: One or more segments are malformed', str);
+            throw new InvalidVttError(
+                'Invalid VTT file: One or more segments are malformed',
+                str,
+            );
         }
 
         return vtt;
@@ -463,7 +472,9 @@ export class VTT {
                 return VTT.fromString(text);
             })
             .catch((err) => {
-                throw new Error(`Failed to load VTT file from URL: ${err.message}`);
+                throw new Error(
+                    `Failed to load VTT file from URL: ${err.message}`,
+                );
             });
     }
     /**
@@ -489,12 +500,17 @@ export class VTT {
                     ),
                 );
                 if (timingLineIndex === -1) {
-                    throw new InvalidVttError('Invalid SRT segment: Missing timing line', segment);
+                    throw new InvalidVttError(
+                        'Invalid SRT segment: Missing timing line',
+                        segment,
+                    );
                 }
                 const timingLine = lines[timingLineIndex];
                 const identifier = lines.slice(0, timingLineIndex).join('\n');
                 const textLines = lines.slice(timingLineIndex + 1);
-                const [start, end] = timingLine.split('-->').map((t) => t.trim().replace(',', '.'));
+                const [start, end] = timingLine
+                    .split('-->')
+                    .map((t) => t.trim().replace(',', '.'));
                 const parts = identifier
                     ? [identifier, `${start} --> ${end}`, textLines.join('\n')]
                     : [`${start} --> ${end}`, textLines.join('\n')];
@@ -515,14 +531,17 @@ export class VTT {
     static merge(...vtts: VTT[]): VTT {
         const [first, ...rest] = vtts;
         const merged = new VTT(first.header.description, first.header.meta);
+
         for (const segment of first.segments.slice(1)) {
             merged.addSegment(segment);
         }
+
         for (const vtt of rest) {
             for (const segment of vtt.segments.slice(1)) {
                 merged.addSegment(segment);
             }
         }
+
         return merged;
     }
     /**
