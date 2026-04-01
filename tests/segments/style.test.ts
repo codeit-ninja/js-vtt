@@ -40,19 +40,19 @@ describe('Style', () => {
         });
     });
 
-    describe('isValid()', () => {
+    describe('valid', () => {
         it('returns true for a normal style block', () => {
             const s = new Style([{ selectors: ['::cue'], declarations: { color: 'white' } }]);
-            expect(s.isValid()).toBe(true);
+            expect(s.valid).toBe(true);
         });
 
         it('returns false when CSS content contains -->', () => {
             // Construct a style that would serialise with --> in it
-            // We have to be creative: the isValid check serialises to string then checks
+            // We have to be creative: the valid check serialises to string then checks
             const s = new Style([{ selectors: ['::cue'], declarations: {} }]);
             // Directly inject a bad selector to cause --> in output
             s.addRule({ selectors: ['::cue --> bad'], declarations: { color: 'red' } });
-            expect(s.isValid()).toBe(false);
+            expect(s.valid).toBe(false);
         });
     });
 
@@ -97,7 +97,7 @@ describe('Style', () => {
         it('returns the rules array', () => {
             const rules = [{ selectors: ['::cue'], declarations: { color: 'white' } }];
             const s = new Style(rules);
-            expect(s.toJSON()).toEqual({ rules });
+            expect(s.toJSON()).toEqual({ _type: 'style', rules });
         });
     });
 

@@ -23,3 +23,7 @@ export const isRegion = (str: string) => {
 export const isComment = (str: string) => {
     return /^NOTE(?:\n|$)/.test(str);
 };
+
+export const isSRT = (str: string) => {
+    return /^\d+\n\d{2}:\d{2}:\d{2},\d{3}\s+-->\s+\d{2}:\d{2}:\d{2},\d{3}/.test(str);
+};

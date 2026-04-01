@@ -79,76 +79,74 @@ describe('Region', () => {
         });
     });
 
-    describe('isValid()', () => {
+    describe('valid', () => {
         it('returns true for a fully populated valid region', () => {
             const r = new Region('fred', 40, 3, [0, 100], [10, 90], 'up');
-            expect(r.isValid()).toBe(true);
+            expect(r.valid).toBe(true);
         });
 
         it('returns true for an empty region', () => {
-            expect(new Region().isValid()).toBe(true);
+            expect(new Region().valid).toBe(true);
         });
 
         it('returns true when width is 0', () => {
-            expect(new Region('r', 0).isValid()).toBe(true);
+            expect(new Region('r', 0).valid).toBe(true);
         });
 
         it('returns true when width is 100', () => {
-            expect(new Region('r', 100).isValid()).toBe(true);
+            expect(new Region('r', 100).valid).toBe(true);
         });
 
         it('returns false when width is negative', () => {
-            expect(new Region('r', -1).isValid()).toBe(false);
+            expect(new Region('r', -1).valid).toBe(false);
         });
 
         it('returns false when width exceeds 100', () => {
-            expect(new Region('r', 101).isValid()).toBe(false);
+            expect(new Region('r', 101).valid).toBe(false);
         });
 
         it('returns false when lines is negative', () => {
-            expect(new Region('r', undefined, -1).isValid()).toBe(false);
+            expect(new Region('r', undefined, -1).valid).toBe(false);
         });
 
         it('returns false when lines is a float', () => {
-            expect(new Region('r', undefined, 1.5).isValid()).toBe(false);
+            expect(new Region('r', undefined, 1.5).valid).toBe(false);
         });
 
         it('returns true when lines is 0', () => {
-            expect(new Region('r', undefined, 0).isValid()).toBe(true);
+            expect(new Region('r', undefined, 0).valid).toBe(true);
         });
 
         it('returns false when id contains a tab character', () => {
-            expect(new Region('bad\tid').isValid()).toBe(false);
+            expect(new Region('bad\tid').valid).toBe(false);
         });
 
         it('returns false when id contains a space', () => {
-            expect(new Region('bad id').isValid()).toBe(false);
+            expect(new Region('bad id').valid).toBe(false);
         });
 
         it('returns false when id contains a newline', () => {
-            expect(new Region('bad\nid').isValid()).toBe(false);
+            expect(new Region('bad\nid').valid).toBe(false);
         });
 
         it('returns false when id contains -->', () => {
-            expect(new Region('id-->bad').isValid()).toBe(false);
+            expect(new Region('id-->bad').valid).toBe(false);
         });
 
         it('returns false when regionAnchor x is out of range', () => {
-            expect(new Region('r', undefined, undefined, [-1, 50]).isValid()).toBe(false);
+            expect(new Region('r', undefined, undefined, [-1, 50]).valid).toBe(false);
         });
 
         it('returns false when regionAnchor y exceeds 100', () => {
-            expect(new Region('r', undefined, undefined, [50, 101]).isValid()).toBe(false);
+            expect(new Region('r', undefined, undefined, [50, 101]).valid).toBe(false);
         });
 
         it('returns false when viewportAnchor is out of range', () => {
-            expect(new Region('r', undefined, undefined, undefined, [50, -1]).isValid()).toBe(
-                false,
-            );
+            expect(new Region('r', undefined, undefined, undefined, [50, -1]).valid).toBe(false);
         });
 
         it('returns true for 0% and 100% anchor values', () => {
-            expect(new Region('r', undefined, undefined, [0, 0], [100, 100]).isValid()).toBe(true);
+            expect(new Region('r', undefined, undefined, [0, 0], [100, 100]).valid).toBe(true);
         });
     });
 
@@ -190,6 +188,7 @@ describe('Region', () => {
         it('returns all region properties', () => {
             const r = new Region('fred', 40, 3, [0, 100], [10, 90], 'up');
             expect(r.toJSON()).toEqual({
+                _type: 'region',
                 id: 'fred',
                 width: 40,
                 lines: 3,
@@ -201,6 +200,7 @@ describe('Region', () => {
 
         it('returns undefined for all optional fields', () => {
             expect(new Region().toJSON()).toEqual({
+                _type: 'region',
                 id: undefined,
                 width: undefined,
                 lines: undefined,

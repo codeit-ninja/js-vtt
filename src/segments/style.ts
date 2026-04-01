@@ -77,6 +77,8 @@ export type StyleRule = {
 };
 
 export class Style extends Segment {
+    _type = 'style' as const;
+
     #rules: StyleRule[];
 
     constructor(rules: StyleRule[]) {
@@ -142,6 +144,7 @@ export class Style extends Segment {
 
     toJSON(): Record<string, any> {
         return {
+            _type: this._type,
             rules: this.#rules,
         };
     }
@@ -169,7 +172,7 @@ export class Style extends Segment {
         );
     }
 
-    isValid(): boolean {
+    get valid(): boolean {
         // Per spec §4.1: style block CSS content must not contain '-->'.
         const content = this.toString().slice('STYLE\n'.length);
         return !content.includes('-->');

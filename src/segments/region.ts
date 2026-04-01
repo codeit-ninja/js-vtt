@@ -10,6 +10,8 @@ import { Segment } from './segment';
 export type RegionAnchor = [number, number];
 
 export class Region extends Segment {
+    _type = 'region' as const;
+
     #id?: string;
     #width?: number;
     #lines?: number;
@@ -125,6 +127,7 @@ export class Region extends Segment {
 
     toJSON(): Record<string, any> {
         return {
+            _type: this._type,
             id: this.#id,
             width: this.#width,
             lines: this.#lines,
@@ -134,7 +137,7 @@ export class Region extends Segment {
         };
     }
 
-    isValid(): boolean {
+    get valid(): boolean {
         // Per spec §3.4: id must not contain ASCII whitespace or '-->'.
         if (this.#id !== undefined && (/[\t\n\r ]/.test(this.#id) || this.#id.includes('-->'))) {
             return false;

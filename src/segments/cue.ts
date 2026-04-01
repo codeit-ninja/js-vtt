@@ -40,6 +40,8 @@ const CUE_REGEX =
     /^(?:(?<identifier>(?![\d:]+-->)[^\n]+)\n)?(?<timings>[\d:.,]+\s+-->\s+[\d:.,]+[^\n]*)\n(?<text>[\s\S]+)$/;
 
 export class Cue<T extends CueSettings = CueSettings> extends Segment {
+    _type = 'cue' as const;
+
     #startTime: number;
     #endTime: number;
     #text: string;
@@ -116,7 +118,7 @@ export class Cue<T extends CueSettings = CueSettings> extends Segment {
         return this;
     }
 
-    isValid(): boolean {
+    get valid(): boolean {
         // Per spec §4.1: endTime must be greater than startTime, both non-negative.
         if (this.#startTime < 0 || this.#endTime <= this.#startTime) return false;
         // Per spec §4.1: cue payload must not contain '-->'.
@@ -153,6 +155,7 @@ export class Cue<T extends CueSettings = CueSettings> extends Segment {
 
     toJSON(): Record<string, any> {
         return {
+            _type: this._type,
             identifier: this.#identifier,
             startTime: this.#startTime,
             endTime: this.#endTime,

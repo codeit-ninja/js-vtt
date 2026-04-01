@@ -3,6 +3,8 @@ import { isNote } from '../helpers';
 import { Segment } from './segment';
 
 export class Comment extends Segment {
+    _type = 'comment' as const;
+
     #text: string;
 
     constructor(text: string) {
@@ -28,10 +30,13 @@ export class Comment extends Segment {
     }
 
     toJSON(): Record<string, any> {
-        return { text: this.#text };
+        return {
+            _type: this._type,
+            text: this.#text,
+        };
     }
 
-    isValid(): boolean {
+    get valid(): boolean {
         // Per spec §4.1: comment block content must not contain '-->'.
         return !this.#text.includes('-->');
     }

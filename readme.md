@@ -1,6 +1,6 @@
 # js-vtt
 
-A TypeScript library for parsing, building, and manipulating [WebVTT](https://www.w3.org/TR/webvtt1/) subtitle files. Supports both VTT and SRT output.
+A TypeScript library for parsing, building, and manipulating [WebVTT](https://www.w3.org/TR/webvtt1/) subtitle files. Supports both VTT and SRT formats.
 
 ## Installation
 
@@ -45,9 +45,11 @@ console.log(vtt.toString());
     - [Region](#region)
     - [Style](#style)
     - [Comment](#comment)
+- [Querying segments](#querying-segments)
 - [Timing utilities](#timing-utilities)
 - [Validation](#validation)
 - [Serialization](#serialization)
+- [Browser utilities](#browser-utilities)
 - [Errors](#errors)
 
 ---
@@ -69,8 +71,30 @@ const vtt = VTT.fromString(raw);
 
 ### From a URL
 
+Fetches the file at the given URL and parses it. Auto-detects SRT vs VTT.
+
 ```ts
 const vtt = await VTT.fromURL('https://example.com/subtitles.vtt');
+```
+
+### From a File (browser)
+
+Parses a browser [`File`](https://developer.mozilla.org/en-US/docs/Web/API/File) object. Auto-detects SRT vs VTT.
+
+```ts
+const vtt = await VTT.fromFile(file); // file: File
+```
+
+### From an SRT string
+
+Converts an SRT-formatted string to a `VTT` instance. Cue sequence numbers are preserved as cue identifiers.
+
+```ts
+const srt = `1
+00:00:01,000 --> 00:00:04,000
+Hello!`;
+
+const vtt = VTT.fromSRT(srt);
 ```
 
 ### From JSON
@@ -80,6 +104,14 @@ Reconstructs a `VTT` instance from the output of `vtt.toJSON()`.
 ```ts
 const json = vtt.toJSON();
 const restored = VTT.fromJSON(json);
+```
+
+### Merging multiple files
+
+Combines two or more `VTT` instances into one. The header of the first instance is used.
+
+```ts
+const merged = VTT.merge(vttA, vttB, vttC);
 ```
 
 ---
@@ -126,7 +158,12 @@ vtt.setHeader('Updated title', { Language: 'fr' });
 
 ### Header
 
-The header is created automatically when you construct a `VTT` instance. Use `setHeader()` to update it, or access it through `VTT.fromString()` which parses it for you.
+The header is created automatically when you construct a `VTT` instance. Use `setHeader()` to update it, or access it via the `header` getter.
+
+```ts
+vtt.header.description; // string | undefined
+vtt.header.meta; // Record<string, string>
+```
 
 ---
 
@@ -281,6 +318,54 @@ vtt.addSegment(new Cue(0, 1, 'Hi')).addSegment(new Region('r1'));
 
 ---
 
+## Querying segments
+
+### `getCues()`
+
+Returns all `Cue` segments.
+
+```ts
+const cues = vtt.getCues(); // Cue[]
+```
+
+### `getCuesByTime(start, end)`
+
+Returns all cues whose time range overlaps `[start, end]` (in seconds). Useful for rendering cues at a given playback position.
+
+```ts
+const visible = vtt.getCuesByTime(5, 10); // cues active between 5s and 10s
+```
+
+### `getCueById(id)`
+
+Returns the first cue matching the given identifier, or `undefined`.
+
+```ts
+const cue = vtt.getCueById('intro');
+```
+
+### `getSegmentsByType(type)`
+
+Returns all segments of a given type. Accepts either a class constructor or a segment type string.
+
+```ts
+import { Cue, Region } from 'js-vtt';
+
+vtt.getSegmentsByType(Cue); // Cue[]
+vtt.getSegmentsByType(Region); // Region[]
+vtt.getSegmentsByType('style'); // Style[]
+```
+
+### `segments`
+
+The full list of all segments including the header (index 0).
+
+```ts
+vtt.segments; // Segment[]
+```
+
+---
+
 ## Timing utilities
 
 All timing methods return `this` for chaining.
@@ -318,7 +403,7 @@ vtt.syncFps(59.94, 29.97);
 
 ### `validate()`
 
-Returns `true` if the header and all segments are structurally valid according to the WebVTT spec.
+Returns `true` if the header and all segments are structurally valid per the WebVTT spec.
 
 ```ts
 if (!vtt.validate()) {
@@ -326,12 +411,29 @@ if (!vtt.validate()) {
 }
 ```
 
-Individual segment classes also expose `isValid()`:
+### `getValidationErrors()`
+
+Returns an array of `{ index, segment }` objects for every invalid segment. An empty array means the file is valid. More useful than `validate()` when you need to know _what_ is wrong.
+
+```ts
+const errors = vtt.getValidationErrors();
+// [{ index: 2, segment: Cue { ... } }, ...]
+
+for (const { index, segment } of errors) {
+    console.error(`Segment at index ${index} is invalid:`, segment.toJSON());
+}
+```
+
+### `valid` getter (per segment)
+
+Every segment exposes a `valid` getter that returns `true` if the segment is structurally valid.
 
 ```ts
 const cue = new Cue(5, 3, 'Bad'); // endTime < startTime
-cue.isValid(); // false
+cue.valid; // false
 ```
+
+`isValid()` is also available as a backwards-compatible alias for `valid`.
 
 ---
 
@@ -351,23 +453,46 @@ Serializes the VTT instance to a string.
 const vttString = vtt.toString();
 const vttString2 = vtt.toString('vtt');
 
-// SRT (NOTE and STYLE blocks are omitted; tags stripped from cue text)
+// SRT (NOTE and STYLE blocks are omitted; inline tags stripped from cue text)
 const srtString = vtt.toString('srt');
 ```
 
 ### `toJSON()`
 
-Returns a plain object representing the full VTT file.
+Returns a plain object representing the full VTT file. Each segment includes a `_type` discriminant field (`'cue'`, `'region'`, `'style'`, `'comment'`, `'header'`).
 
 ```ts
 const json = vtt.toJSON();
 // {
-//   header: { description: '...', meta: { ... } },
-//   segments: [ { startTime: 0, endTime: 5, text: '...', ... }, ... ]
+//   header: { _type: 'header', description: '...', meta: { ... } },
+//   segments: [
+//     { _type: 'cue', startTime: 0, endTime: 5, text: '...', ... },
+//     ...
+//   ]
 // }
 ```
 
 Individual segments also have `toString()` and `toJSON()` methods.
+
+---
+
+## Browser utilities
+
+### `attachToVideo(video, kind, label?, language?)`
+
+Creates a [`TextTrack`](https://developer.mozilla.org/en-US/docs/Web/API/TextTrack) on the given `HTMLVideoElement` and populates it with `VTTCue` objects from all cues in the instance.
+
+```ts
+const track = vtt.attachToVideo(videoEl, 'subtitles', 'English', 'en');
+track.mode = 'showing';
+```
+
+| Parameter  | Type                | Description                                        |
+| ---------- | ------------------- | -------------------------------------------------- |
+| `video`    | `HTMLVideoElement`  | The video element to attach the track to           |
+| `kind`     | `TextTrackKind`     | e.g. `'subtitles'`, `'captions'`, `'descriptions'` |
+| `label`    | `string` (optional) | Human-readable track label                         |
+| `language` | `string` (optional) | BCP 47 language tag (e.g. `'en'`, `'fr'`)          |
 
 ---
 
@@ -382,7 +507,7 @@ All errors extend the native `Error` class and include the offending segment str
 | `InvalidRegionError`  | `Region.fromString()` receives a malformed region block         |
 | `InvalidStyleError`   | `Style.fromString()` receives a malformed style block           |
 | `InvalidCommentError` | `Comment.fromString()` receives a malformed NOTE block          |
-| `InvalidVttError`     | General VTT-level validation failure                            |
+| `InvalidVttError`     | General VTT-level validation failure (parsing or structure)     |
 | `SrtValidationError`  | SRT-specific validation failure                                 |
 
 ```ts
@@ -392,7 +517,7 @@ try {
     VTT.fromString('not a vtt file');
 } catch (e) {
     if (e instanceof InvalidVttError) {
-        console.error('Bad header:', e.message);
+        console.error('Bad VTT:', e.message);
     }
 }
 ```

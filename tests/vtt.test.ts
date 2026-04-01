@@ -708,4 +708,396 @@ describe('VTT fromURL()', () => {
         });
         await expect(VTT.fromURL('https://example.com/fail.vtt')).rejects.toThrow('Network error');
     });
+
+    it('auto-detects and parses an SRT file from a URL', async () => {
+        const srt = '1\n00:00:01,000 --> 00:00:04,000\nHello SRT';
+        vi.stubGlobal('fetch', async () => ({ text: async () => srt }));
+        const vtt = await VTT.fromURL('https://example.com/sub.srt');
+        expect(vtt.toJSON().segments[0]).toMatchObject({
+            startTime: 1,
+            endTime: 4,
+            text: 'Hello SRT',
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// fromSRT
+// ---------------------------------------------------------------------------
+
+const SIMPLE_SRT = `1
+00:00:01,000 --> 00:00:04,000
+Hello!
+
+2
+00:00:05,000 --> 00:00:08,000
+World`;
+
+describe('VTT fromSRT()', () => {
+    it('parses a simple SRT file', () => {
+        const vtt = VTT.fromSRT(SIMPLE_SRT);
+        const segs = vtt.toJSON().segments;
+        expect(segs).toHaveLength(2);
+        expect(segs[0]).toMatchObject({ startTime: 1, endTime: 4, text: 'Hello!' });
+        expect(segs[1]).toMatchObject({ startTime: 5, endTime: 8, text: 'World' });
+    });
+
+    it('preserves cue sequence numbers as identifiers', () => {
+        const vtt = VTT.fromSRT(SIMPLE_SRT);
+        const segs = vtt.toJSON().segments;
+        expect(segs[0].identifier).toBe('1');
+        expect(segs[1].identifier).toBe('2');
+    });
+
+    it('parses multi-line cue text', () => {
+        const srt = `1\n00:00:01,000 --> 00:00:04,000\nLine one\nLine two`;
+        const vtt = VTT.fromSRT(srt);
+        expect(vtt.toJSON().segments[0].text).toBe('Line one\nLine two');
+    });
+
+    it('handles a UTF-8 BOM', () => {
+        const vtt = VTT.fromSRT('\uFEFF' + SIMPLE_SRT);
+        expect(vtt.toJSON().segments).toHaveLength(2);
+    });
+
+    it('handles CRLF line endings', () => {
+        const vtt = VTT.fromSRT(SIMPLE_SRT.replace(/\n/g, '\r\n'));
+        expect(vtt.toJSON().segments).toHaveLength(2);
+    });
+
+    it('parses hours, minutes, seconds and milliseconds correctly', () => {
+        const srt = `1\n01:02:03,456 --> 01:02:07,890\nTimed`;
+        const vtt = VTT.fromSRT(srt);
+        const seg = vtt.toJSON().segments[0];
+        expect(seg.startTime).toBeCloseTo(3723.456);
+        expect(seg.endTime).toBeCloseTo(3727.89);
+    });
+
+    it('uses HH:MM:SS.mmm timestamps in the produced VTT output', () => {
+        const vtt = VTT.fromSRT(SIMPLE_SRT);
+        const output = vtt.toString();
+        expect(output).toContain('00:00:01.000 --> 00:00:04.000');
+    });
+
+    it('throws when a segment has no timing line', () => {
+        expect(() => VTT.fromSRT('just some text\n\nanother block')).toThrow();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// fromFile
+// ---------------------------------------------------------------------------
+
+describe('VTT fromFile()', () => {
+    it('parses a VTT File object', async () => {
+        const mockFile = { text: async () => MINIMAL_VTT } as unknown as File;
+        const vtt = await VTT.fromFile(mockFile);
+        expect(vtt.toJSON().segments).toHaveLength(2);
+    });
+
+    it('auto-detects and parses an SRT File object', async () => {
+        const mockFile = { text: async () => SIMPLE_SRT } as unknown as File;
+        const vtt = await VTT.fromFile(mockFile);
+        expect(vtt.toJSON().segments[0]).toMatchObject({
+            startTime: 1,
+            endTime: 4,
+            text: 'Hello!',
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// merge
+// ---------------------------------------------------------------------------
+
+describe('VTT merge()', () => {
+    it('returns a new VTT with segments from both instances', () => {
+        const a = new VTT().addCue(0, 1, 'A');
+        const b = new VTT().addCue(2, 3, 'B');
+        const merged = VTT.merge(a, b);
+        expect(merged.getCues()).toHaveLength(2);
+    });
+
+    it('uses the header of the first instance', () => {
+        const a = new VTT('First', { Kind: 'captions' });
+        const b = new VTT('Second');
+        const merged = VTT.merge(a, b);
+        expect(merged.header.description).toBe('First');
+        expect(merged.header.meta).toMatchObject({ Kind: 'captions' });
+    });
+
+    it('appends segments from all instances in order', () => {
+        const a = new VTT().addCue(0, 1, 'A');
+        const b = new VTT().addCue(2, 3, 'B');
+        const c = new VTT().addCue(4, 5, 'C');
+        const merged = VTT.merge(a, b, c);
+        expect(merged.getCues().map((cu) => cu.text)).toEqual(['A', 'B', 'C']);
+    });
+
+    it('does not mutate the source instances', () => {
+        const a = new VTT().addCue(0, 1, 'A');
+        const b = new VTT().addCue(2, 3, 'B');
+        VTT.merge(a, b);
+        expect(a.getCues()).toHaveLength(1);
+        expect(b.getCues()).toHaveLength(1);
+    });
+
+    it('works with a single instance', () => {
+        const merged = VTT.merge(new VTT().addCue(0, 1, 'Solo'));
+        expect(merged.getCues()).toHaveLength(1);
+    });
+
+    it('preserves non-cue segments from all instances', () => {
+        const a = new VTT().addComment('Note A').addCue(0, 1, 'A');
+        const b = new VTT().addRegion('r1').addCue(2, 3, 'B');
+        const merged = VTT.merge(a, b);
+        expect(merged.toJSON().segments).toHaveLength(4);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// getCues
+// ---------------------------------------------------------------------------
+
+describe('VTT getCues()', () => {
+    it('returns all cues and nothing else', () => {
+        const vtt = new VTT().addRegion('r').addCue(0, 1, 'A').addComment('note').addCue(2, 3, 'B');
+        const cues = vtt.getCues();
+        expect(cues).toHaveLength(2);
+        expect(cues.every((s) => s instanceof Cue)).toBe(true);
+    });
+
+    it('returns an empty array when there are no cues', () => {
+        expect(new VTT().getCues()).toHaveLength(0);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// getCuesByTime
+// ---------------------------------------------------------------------------
+
+describe('VTT getCuesByTime()', () => {
+    it('returns cues whose time range overlaps the given window', () => {
+        const vtt = new VTT().addCue(0, 5, 'A').addCue(3, 8, 'B').addCue(10, 15, 'C');
+        const active = vtt.getCuesByTime(4, 6);
+        expect(active).toHaveLength(2);
+        expect(active.map((c) => c.text)).toEqual(expect.arrayContaining(['A', 'B']));
+    });
+
+    it('includes a cue that starts before the range and ends inside it', () => {
+        expect(new VTT().addCue(0, 5, 'A').getCuesByTime(3, 10)).toHaveLength(1);
+    });
+
+    it('includes a cue that starts inside the range and ends after it', () => {
+        expect(new VTT().addCue(5, 15, 'A').getCuesByTime(3, 10)).toHaveLength(1);
+    });
+
+    it('excludes a cue that ends exactly at the range start', () => {
+        // cue.endTime (3) is not > start (3) → excluded
+        expect(new VTT().addCue(0, 3, 'Before').getCuesByTime(3, 7)).toHaveLength(0);
+    });
+
+    it('excludes a cue that starts exactly at the range end', () => {
+        // cue.startTime (7) is not < end (7) → excluded
+        expect(new VTT().addCue(7, 12, 'After').getCuesByTime(3, 7)).toHaveLength(0);
+    });
+
+    it('excludes cues entirely outside the range', () => {
+        const vtt = new VTT().addCue(0, 2, 'Before').addCue(8, 12, 'After');
+        expect(vtt.getCuesByTime(3, 7)).toHaveLength(0);
+    });
+
+    it('returns an empty array when there are no cues', () => {
+        expect(new VTT().getCuesByTime(0, 10)).toHaveLength(0);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// getCueById
+// ---------------------------------------------------------------------------
+
+describe('VTT getCueById()', () => {
+    it('returns the cue with the matching string identifier', () => {
+        const vtt = new VTT().addCue(0, 1, 'First', 'intro').addCue(2, 3, 'Second', 'chapter-1');
+        expect(vtt.getCueById('intro')?.text).toBe('First');
+        expect(vtt.getCueById('chapter-1')?.text).toBe('Second');
+    });
+
+    it('returns the cue with a matching numeric identifier', () => {
+        const vtt = new VTT().addCue(0, 1, 'Numbered', 42);
+        expect(vtt.getCueById(42)?.text).toBe('Numbered');
+    });
+
+    it('returns undefined when no cue has the given identifier', () => {
+        expect(new VTT().addCue(0, 1, 'No id').getCueById('missing')).toBeUndefined();
+    });
+
+    it('returns undefined for an empty VTT', () => {
+        expect(new VTT().getCueById('any')).toBeUndefined();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// getSegmentsByType
+// ---------------------------------------------------------------------------
+
+describe('VTT getSegmentsByType()', () => {
+    it('returns cues when passed the Cue class', () => {
+        const vtt = new VTT().addCue(0, 1, 'A').addRegion('r').addComment('note');
+        const cues = vtt.getSegmentsByType(Cue);
+        expect(cues).toHaveLength(1);
+        expect(cues[0].text).toBe('A');
+    });
+
+    it('returns regions when passed the Region class', () => {
+        const vtt = new VTT().addCue(0, 1, 'A').addRegion('r');
+        const regions = vtt.getSegmentsByType(Region);
+        expect(regions).toHaveLength(1);
+        expect(regions[0].id).toBe('r');
+    });
+
+    it('returns cues when passed the string "cue"', () => {
+        const vtt = new VTT().addCue(0, 1, 'A').addRegion('r');
+        expect(vtt.getSegmentsByType('cue')).toHaveLength(1);
+    });
+
+    it('returns regions when passed the string "region"', () => {
+        const vtt = new VTT().addCue(0, 1, 'A').addRegion('r');
+        expect(vtt.getSegmentsByType('region')).toHaveLength(1);
+    });
+
+    it('includes the header when filtering by "header"', () => {
+        expect(new VTT().getSegmentsByType('header')).toHaveLength(1);
+    });
+
+    it('returns an empty array when no segments match', () => {
+        expect(new VTT().getSegmentsByType(Cue)).toHaveLength(0);
+    });
+
+    it('returns multiple matching segments', () => {
+        const vtt = new VTT().addCue(0, 1, 'A').addCue(2, 3, 'B').addRegion('r');
+        expect(vtt.getSegmentsByType(Cue)).toHaveLength(2);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// getValidationErrors
+// ---------------------------------------------------------------------------
+
+describe('VTT getValidationErrors()', () => {
+    it('returns an empty array for a valid VTT', () => {
+        expect(new VTT().addCue(0, 5, 'Hello').getValidationErrors()).toHaveLength(0);
+    });
+
+    it('returns an empty array for an empty VTT', () => {
+        expect(new VTT().getValidationErrors()).toHaveLength(0);
+    });
+
+    it('returns one entry per invalid segment', () => {
+        const vtt = new VTT();
+        vtt.addSegment(new Cue(5, 3, 'Bad')); // invalid
+        vtt.addSegment(new Cue(0, 5, 'Good')); // valid
+        vtt.addSegment(new Comment('bad --> note')); // invalid
+        expect(vtt.getValidationErrors()).toHaveLength(2);
+    });
+
+    it('reports the correct index (header is index 0, first segment is index 1)', () => {
+        const vtt = new VTT();
+        vtt.addSegment(new Cue(5, 3, 'Bad'));
+        expect(vtt.getValidationErrors()[0].index).toBe(1);
+    });
+
+    it('exposes the invalid segment instance on the error object', () => {
+        const bad = new Cue(5, 3, 'Bad');
+        const vtt = new VTT();
+        vtt.addSegment(bad);
+        expect(vtt.getValidationErrors()[0].segment).toBe(bad);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// attachToVideo
+// ---------------------------------------------------------------------------
+
+describe('VTT attachToVideo()', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('calls addTextTrack with the given kind, label and language', () => {
+        const addCueMock = vi.fn();
+        const addTextTrackMock = vi.fn(() => ({ addCue: addCueMock }));
+        const videoMock = { addTextTrack: addTextTrackMock } as unknown as HTMLVideoElement;
+        vi.stubGlobal(
+            'VTTCue',
+            class {
+                constructor(
+                    public start: number,
+                    public end: number,
+                    public text: string,
+                ) {}
+            },
+        );
+
+        new VTT().attachToVideo(videoMock, 'subtitles', 'English', 'en');
+        expect(addTextTrackMock).toHaveBeenCalledWith('subtitles', 'English', 'en');
+    });
+
+    it('adds one VTTCue per cue to the track', () => {
+        const addCueMock = vi.fn();
+        const videoMock = {
+            addTextTrack: vi.fn(() => ({ addCue: addCueMock })),
+        } as unknown as HTMLVideoElement;
+        vi.stubGlobal(
+            'VTTCue',
+            class {
+                constructor(
+                    public start: number,
+                    public end: number,
+                    public text: string,
+                ) {}
+            },
+        );
+
+        new VTT().addCue(0, 1, 'A').addCue(2, 3, 'B').attachToVideo(videoMock, 'captions');
+        expect(addCueMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not add VTTCues for non-cue segments', () => {
+        const addCueMock = vi.fn();
+        const videoMock = {
+            addTextTrack: vi.fn(() => ({ addCue: addCueMock })),
+        } as unknown as HTMLVideoElement;
+        vi.stubGlobal(
+            'VTTCue',
+            class {
+                constructor(
+                    public start: number,
+                    public end: number,
+                    public text: string,
+                ) {}
+            },
+        );
+
+        new VTT().addComment('note').addRegion('r').attachToVideo(videoMock, 'subtitles');
+        expect(addCueMock).not.toHaveBeenCalled();
+    });
+
+    it('returns the created TextTrack', () => {
+        const mockTrack = { addCue: vi.fn() };
+        const videoMock = { addTextTrack: vi.fn(() => mockTrack) } as unknown as HTMLVideoElement;
+        vi.stubGlobal(
+            'VTTCue',
+            class {
+                constructor(
+                    public start: number,
+                    public end: number,
+                    public text: string,
+                ) {}
+            },
+        );
+
+        const track = new VTT().addCue(0, 1, 'Hi').attachToVideo(videoMock, 'captions');
+        expect(track).toBe(mockTrack);
+    });
 });

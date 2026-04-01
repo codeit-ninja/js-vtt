@@ -111,45 +111,45 @@ describe('Cue', () => {
         });
     });
 
-    describe('isValid()', () => {
+    describe('valid', () => {
         it('returns true for valid cue', () => {
-            expect(new Cue(0, 5, 'Hello').isValid()).toBe(true);
+            expect(new Cue(0, 5, 'Hello').valid).toBe(true);
         });
 
         it('returns false when startTime is negative', () => {
-            expect(new Cue(-1, 5, 'Hello').isValid()).toBe(false);
+            expect(new Cue(-1, 5, 'Hello').valid).toBe(false);
         });
 
         it('returns false when endTime equals startTime', () => {
-            expect(new Cue(5, 5, 'Hello').isValid()).toBe(false);
+            expect(new Cue(5, 5, 'Hello').valid).toBe(false);
         });
 
         it('returns false when endTime is less than startTime', () => {
-            expect(new Cue(6, 3, 'Hello').isValid()).toBe(false);
+            expect(new Cue(6, 3, 'Hello').valid).toBe(false);
         });
 
         it('returns false when text contains -->', () => {
-            expect(new Cue(0, 5, 'bad --> text').isValid()).toBe(false);
+            expect(new Cue(0, 5, 'bad --> text').valid).toBe(false);
         });
 
         it('returns false when string identifier contains -->', () => {
-            expect(new Cue(0, 5, 'Hello', 'id --> bad').isValid()).toBe(false);
+            expect(new Cue(0, 5, 'Hello', 'id --> bad').valid).toBe(false);
         });
 
         it('returns false when identifier contains a newline', () => {
-            expect(new Cue(0, 5, 'Hello', 'bad\nid').isValid()).toBe(false);
+            expect(new Cue(0, 5, 'Hello', 'bad\nid').valid).toBe(false);
         });
 
         it('returns false when identifier contains a carriage return', () => {
-            expect(new Cue(0, 5, 'Hello', 'bad\rid').isValid()).toBe(false);
+            expect(new Cue(0, 5, 'Hello', 'bad\rid').valid).toBe(false);
         });
 
         it('accepts a numeric identifier', () => {
-            expect(new Cue(0, 5, 'Hello', 1).isValid()).toBe(true);
+            expect(new Cue(0, 5, 'Hello', 1).valid).toBe(true);
         });
 
         it('returns true when startTime is 0', () => {
-            expect(new Cue(0, 0.001, 'Hi').isValid()).toBe(true);
+            expect(new Cue(0, 0.001, 'Hi').valid).toBe(true);
         });
     });
 
@@ -224,6 +224,7 @@ describe('Cue', () => {
         it('returns all cue properties', () => {
             const cue = new Cue(1, 4, 'Hello', 'intro', { align: 'center' });
             expect(cue.toJSON()).toEqual({
+                _type: 'cue',
                 identifier: 'intro',
                 startTime: 1,
                 endTime: 4,

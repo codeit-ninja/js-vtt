@@ -1,6 +1,8 @@
 import { Segment } from './segment';
 
 export class Header extends Segment {
+    _type = 'header' as const;
+
     #meta: Record<string, string>;
     #description?: string;
 
@@ -26,7 +28,7 @@ export class Header extends Segment {
         this.#description = description;
     }
 
-    isValid(): boolean {
+    get valid(): boolean {
         // Per spec §4.1: description is on the WEBVTT line and must not contain CR or LF.
         if (this.#description !== undefined && /[\r\n]/.test(this.#description)) {
             return false;
@@ -54,6 +56,7 @@ export class Header extends Segment {
 
     toJSON(): Record<string, any> {
         return {
+            _type: this._type,
             description: this.#description,
             meta: this.#meta,
         };

@@ -29,25 +29,25 @@ describe('Comment', () => {
         });
     });
 
-    describe('isValid()', () => {
+    describe('valid', () => {
         it('returns true for normal comment text', () => {
-            expect(new Comment('This is fine').isValid()).toBe(true);
+            expect(new Comment('This is fine').valid).toBe(true);
         });
 
         it('returns true for empty text', () => {
-            expect(new Comment('').isValid()).toBe(true);
+            expect(new Comment('').valid).toBe(true);
         });
 
         it('returns true for multi-line text without -->', () => {
-            expect(new Comment('Line 1\nLine 2').isValid()).toBe(true);
+            expect(new Comment('Line 1\nLine 2').valid).toBe(true);
         });
 
         it('returns false when text contains -->', () => {
-            expect(new Comment('bad --> text').isValid()).toBe(false);
+            expect(new Comment('bad --> text').valid).toBe(false);
         });
 
         it('returns false when --> is the entire text', () => {
-            expect(new Comment('-->').isValid()).toBe(false);
+            expect(new Comment('-->').valid).toBe(false);
         });
     });
 
@@ -71,11 +71,11 @@ describe('Comment', () => {
 
     describe('toJSON()', () => {
         it('returns the text', () => {
-            expect(new Comment('A note').toJSON()).toEqual({ text: 'A note' });
+            expect(new Comment('A note').toJSON()).toEqual({ _type: 'comment', text: 'A note' });
         });
 
         it('returns empty text', () => {
-            expect(new Comment('').toJSON()).toEqual({ text: '' });
+            expect(new Comment('').toJSON()).toEqual({ _type: 'comment', text: '' });
         });
     });
 

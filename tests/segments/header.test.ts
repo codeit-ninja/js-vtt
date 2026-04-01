@@ -42,25 +42,25 @@ describe('Header', () => {
         });
     });
 
-    describe('isValid()', () => {
+    describe('valid', () => {
         it('returns true for a bare header', () => {
-            expect(new Header().isValid()).toBe(true);
+            expect(new Header().valid).toBe(true);
         });
 
         it('returns true for a header with description', () => {
-            expect(new Header('Nice description').isValid()).toBe(true);
+            expect(new Header('Nice description').valid).toBe(true);
         });
 
         it('returns false if description contains a newline', () => {
-            expect(new Header('Bad\ndescription').isValid()).toBe(false);
+            expect(new Header('Bad\ndescription').valid).toBe(false);
         });
 
         it('returns false if description contains a carriage return', () => {
-            expect(new Header('Bad\rdescription').isValid()).toBe(false);
+            expect(new Header('Bad\rdescription').valid).toBe(false);
         });
 
         it('returns true when metadata is present', () => {
-            expect(new Header(undefined, { Kind: 'captions' }).isValid()).toBe(true);
+            expect(new Header(undefined, { Kind: 'captions' }).valid).toBe(true);
         });
     });
 
@@ -101,12 +101,16 @@ describe('Header', () => {
     describe('toJSON()', () => {
         it('returns description and meta', () => {
             const h = new Header('Live', { Kind: 'captions' });
-            expect(h.toJSON()).toEqual({ description: 'Live', meta: { Kind: 'captions' } });
+            expect(h.toJSON()).toEqual({
+                _type: 'header',
+                description: 'Live',
+                meta: { Kind: 'captions' },
+            });
         });
 
         it('returns undefined description when not set', () => {
             const h = new Header();
-            expect(h.toJSON()).toEqual({ description: undefined, meta: {} });
+            expect(h.toJSON()).toEqual({ _type: 'header', description: undefined, meta: {} });
         });
     });
 

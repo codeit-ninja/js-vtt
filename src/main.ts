@@ -1,10 +1,12 @@
-import { VTT } from './index.js';
+import { Cue, VTT } from './index.js';
 
 VTT.fromURL(
-    'https://raw.githubusercontent.com/1c7/vtt-test-file/refs/heads/master/vtt%20files/2.%20No%20Index%20Number%2C%20download%20using%20youtube-dl.vtt',
+    'https://gist.githubusercontent.com/matibzurovski/d690d5c14acbaa399e7f0829f9d6888e/raw/63578ca30e7430be1fa4942d4d8dd599f78151c7/example.srt',
 )
     .then((vtt) => {
-        console.log(vtt.toJSON());
+        const cues = vtt.getSegmentsByType('cue');
+
+        console.log(cues[0].startTime);
     })
     .catch((err) => {
         console.error(err);

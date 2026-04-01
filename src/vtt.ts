@@ -1,7 +1,7 @@
-import { isNote, isCue, isHeader, isRegion, isStyle } from './helpers';
+import { isNote, isCue, isHeader, isRegion, isStyle, isSRT } from './helpers';
 import { Cue, InvalidVttError, Region } from './index';
 import { Header } from './segments/header';
-import { Segment } from './segments/segment';
+import { SegementType, Segment, SegmentTypeMap } from './segments/segment';
 import { CueCSSProperty, Style } from './segments/style';
 import { Comment } from './segments/comment';
 import { CueSettings } from './segments/cue';
@@ -105,7 +105,7 @@ export class VTT {
      * @param viewportAnchor - An optional viewport anchor, expressed as an [x, y] pair of percentages.
      * @param scroll - An optional scroll setting for the region, which can be set to 'up'.
      *
-     * @return The VTT instance with the new region added, allowing for method chaining.
+     * @returns The VTT instance with the new region added, allowing for method chaining.
      */
     addRegion(
         id?: string,
@@ -219,17 +219,32 @@ export class VTT {
      * @returns true if the VTT file is valid, false otherwise.
      */
     validate(): boolean {
-        if (!this.#header.isValid()) {
+        if (!this.#header.valid) {
             return false;
         }
 
         for (const segment of this.#segments.slice(1)) {
-            if (!segment.isValid()) {
+            if (!segment.valid) {
                 return false;
             }
         }
 
         return true;
+    }
+    /**
+     * Returns an array of segments that failed validation, along with their index
+     * in the segments list. An empty array means the file is valid.
+     *
+     * @returns An array of objects with the segment and its index for each invalid segment.
+     */
+    getValidationErrors(): Array<{ index: number; segment: Segment }> {
+        const errors: Array<{ index: number; segment: Segment }> = [];
+        for (let i = 0; i < this.#segments.length; i++) {
+            if (!this.#segments[i].valid) {
+                errors.push({ index: i, segment: this.#segments[i] });
+            }
+        }
+        return errors;
     }
     /**
      * Retrieves all cue segments from the VTT instance, filtering the internal list of segments to return only those that are instances of the Cue class.
@@ -238,6 +253,69 @@ export class VTT {
      */
     getCues() {
         return this.#segments.filter((s): s is Cue => s instanceof Cue);
+    }
+    /**
+     * Retrieves cue segments that are active within a specified time range from the VTT instance.
+     *
+     * @param start - The start time of the range in seconds. Cues that end after this time will be included.
+     * @param end - The end time of the range in seconds. Cues that start before this time will be included.
+     *
+     * @returns An array of Cue instances representing the cues that are active within the specified time range.
+     */
+    getCuesByTime(start: number, end: number) {
+        return this.getCues().filter((cue) => cue.startTime < end && cue.endTime > start);
+    }
+    /**
+     * Retrieves a cue segment by its identifier from the VTT instance.
+     * This method searches through the list of cue segments to find one that matches the provided identifier.
+     *
+     * @param id - The identifier of the cue to retrieve, which can be a string or a number.
+     *
+     * @returns The Cue instance that matches the provided identifier, or undefined if no matching cue is found.
+     */
+    getCueById(id: string | number) {
+        return this.getCues().find((cue) => cue.identifier === id);
+    }
+    /**
+     * Retrieves segments of a specific type from the VTT instance.
+     * The method can be called with either a class constructor (e.g., Cue, Region)
+     * or a string representing the segment type (e.g., 'cue', 'region').
+     *
+     * @param type - The type of segments to retrieve
+     *
+     * @returns An array of segments matching the specified type.
+     */
+    getSegmentsByType<T extends Segment>(type: new (...args: any[]) => T): T[];
+    getSegmentsByType<K extends SegementType>(type: K): SegmentTypeMap[K][];
+    getSegmentsByType<T extends Segment>(
+        type: (new (...args: any[]) => T) | SegementType,
+    ): T[] | Segment[] {
+        if (typeof type === 'string') {
+            return this.#segments.filter((s) => s._type === type);
+        } else {
+            return this.#segments.filter((s): s is T => s instanceof type);
+        }
+    }
+    /**
+     * Attaches the cues from the VTT instance to a given HTMLVideoElement as a TextTrack of the specified kind (e.g., 'subtitles', 'captions').
+     * Each cue is converted to a VTTCue and added to the TextTrack, allowing the cues to be displayed during video playback.
+     *
+     * @param video - The HTMLVideoElement to which the cues will be attached.
+     * @param kind - The kind of TextTrack to create (e.g., 'subtitles', 'captions').
+     * @param label - An optional label for the TextTrack.
+     * @param language - An optional language code for the TextTrack.
+     *
+     * @returns The TextTrack instance that was created and populated with cues from the VTT instance.
+     */
+    attachToVideo(video: HTMLVideoElement, kind: TextTrackKind, label?: string, language?: string) {
+        const track = video.addTextTrack(kind, label, language);
+
+        for (const cue of this.getCues()) {
+            const vtTCue = new VTTCue(cue.startTime, cue.endTime, cue.text);
+            track.addCue(vtTCue);
+        }
+
+        return track;
     }
     /**
      * Converts the VTT instance to a JSON representation, including the header and all segments.
@@ -314,6 +392,9 @@ export class VTT {
                 vtt.addSegment(Comment.fromString(segment));
             }
         }
+        if (!vtt.validate()) {
+            throw new InvalidVttError('Invalid VTT file: One or more segments are malformed', str);
+        }
 
         return vtt;
     }
@@ -356,6 +437,13 @@ export class VTT {
             }
         }
 
+        if (!vtt.validate()) {
+            throw new InvalidVttError(
+                'Invalid VTT JSON: One or more segments are malformed',
+                JSON.stringify(json),
+            );
+        }
+
         return vtt;
     }
     /**
@@ -367,9 +455,88 @@ export class VTT {
     static fromURL(url: string) {
         return fetch(url)
             .then((res) => res.text())
-            .then((text) => VTT.fromString(text))
+            .then((text) => {
+                if (isSRT(text)) {
+                    return VTT.fromSRT(text);
+                }
+
+                return VTT.fromString(text);
+            })
             .catch((err) => {
                 throw new Error(`Failed to load VTT file from URL: ${err.message}`);
             });
+    }
+    /**
+     * Parses a VTT file from an SRT string input, converting the SRT format to WebVTT format and constructing a VTT instance.
+     * The input string is expected to be in valid SRT format, with segments separated by double newlines and timestamps in the format "HH:MM:SS,mmm".
+     *
+     * @param srt - The input string containing the SRT file content.
+     * @returns A VTT instance constructed from the parsed SRT string.
+     */
+    static fromSRT(srt: string) {
+        const vttString = srt
+            .replace(/^\uFEFF/, '')
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n')
+            .replace(new RegExp(String.fromCharCode(0), 'g'), '\uFFFD')
+            .split(/\n{2,}/)
+            .filter((s) => s.trim())
+            .map((segment) => {
+                const lines = segment.split('\n');
+                const timingLineIndex = lines.findIndex((line) =>
+                    /(?:[^\n]+\n)?\d{2}:\d{2}:\d{2},\d{3}\s+-->\s+\d{2}:\d{2}:\d{2},\d{3}/.test(
+                        line,
+                    ),
+                );
+                if (timingLineIndex === -1) {
+                    throw new InvalidVttError('Invalid SRT segment: Missing timing line', segment);
+                }
+                const timingLine = lines[timingLineIndex];
+                const identifier = lines.slice(0, timingLineIndex).join('\n');
+                const textLines = lines.slice(timingLineIndex + 1);
+                const [start, end] = timingLine.split('-->').map((t) => t.trim().replace(',', '.'));
+                const parts = identifier
+                    ? [identifier, `${start} --> ${end}`, textLines.join('\n')]
+                    : [`${start} --> ${end}`, textLines.join('\n')];
+                return parts.join('\n');
+            })
+            .join('\n\n');
+
+        return VTT.fromString(`WEBVTT\n\n${vttString}`);
+    }
+    /**
+     * Merges two or more VTT instances into a single new VTT instance.
+     * The header of the first instance is used for the merged result.
+     * All non-header segments from each instance are appended in order.
+     *
+     * @param vtts - Two or more VTT instances to merge.
+     * @returns A new VTT instance containing all segments from the provided instances.
+     */
+    static merge(...vtts: VTT[]): VTT {
+        const [first, ...rest] = vtts;
+        const merged = new VTT(first.header.description, first.header.meta);
+        for (const segment of first.segments.slice(1)) {
+            merged.addSegment(segment);
+        }
+        for (const vtt of rest) {
+            for (const segment of vtt.segments.slice(1)) {
+                merged.addSegment(segment);
+            }
+        }
+        return merged;
+    }
+    /**
+     * Parses a VTT or SRT file from a browser File object.
+     *
+     * @param file - The File object to read.
+     * @returns A promise that resolves to a VTT instance constructed from the file content.
+     */
+    static fromFile(file: File): Promise<VTT> {
+        return file.text().then((text) => {
+            if (isSRT(text)) {
+                return VTT.fromSRT(text);
+            }
+            return VTT.fromString(text);
+        });
     }
 }
