@@ -4,6 +4,16 @@
 
 ### Minor Changes
 
+- 1f2afdd: Add new features
+
+### Patch Changes
+
+- 19d64c7: Disable eslint in main.ts
+
+## 2.2.0
+
+### Minor Changes
+
 - **`VTT.fromFile(file)`** — parse a browser `File` object directly; auto-detects SRT vs VTT
 - **`VTT.fromSRT(srt)`** — parse an SRT string directly; cue sequence numbers are preserved as identifiers
 - **`VTT.merge(...vtts)`** — combine two or more `VTT` instances into one, using the first instance's header

@@ -1,6 +1,6 @@
 {
     "name": "js-vtt",
-    "version": "2.1.1",
+    "version": "2.2.0",
     "description": "A JavaScript library for parsing and manipulating WebVTT files.",
     "main": "./dist/index.mjs",
     "types": "./dist/index.d.mts",
