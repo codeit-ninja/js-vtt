@@ -5,6 +5,16 @@
     "main": "./dist/index.mjs",
     "types": "./dist/index.d.mts",
     "type": "module",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/codeit-ninja/js-vtt.git"
+    },
+    "author": {
+        "email": "richard@codeit.ninja",
+        "url": "https://codeit.ninja",
+        "name": "Richard Mauritz"
+    },
+    "homepage": "https://github.com/codeit-ninja/js-vtt",
     "scripts": {
         "dev": "tsx watch src/main.ts",
         "build": "tsdown",
