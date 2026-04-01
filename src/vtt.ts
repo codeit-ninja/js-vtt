@@ -232,6 +232,14 @@ export class VTT {
         return true;
     }
     /**
+     * Retrieves all cue segments from the VTT instance, filtering the internal list of segments to return only those that are instances of the Cue class.
+     *
+     * @returns An array of Cue instances representing all cue segments in the VTT file.
+     */
+    getCues() {
+        return this.#segments.filter((s): s is Cue => s instanceof Cue);
+    }
+    /**
      * Converts the VTT instance to a JSON representation, including the header and all segments.
      * This can be useful for serialization, debugging, or interoperability with other systems.
      *
