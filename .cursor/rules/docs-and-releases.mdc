@@ -1,0 +1,26 @@
+---
+description: Documentation and release workflow for js-vtt
+globs: docs/**/*.{md,ts},readme.md,CHANGELOG.md,.changeset/**
+alwaysApply: false
+---
+
+# Docs and releases
+
+## Documentation
+
+- User-facing docs live in `docs/` (VitePress); keep `readme.md` aligned for install/API highlights
+- `llms.txt` is agent-oriented project context — update when structure or core API changes
+- Document public API changes (new methods, format behavior, breaking changes) in both readme and VitePress where relevant
+- Prefer accurate WebVTT terminology (cue, region, NOTE, STYLE, timings)
+
+## Releases
+
+- Versioning uses **changesets** (`pnpm changeset`) — see also the always-on `changesets` rule
+- After user-visible API or behavior changes, add a changeset describing the impact (patch / minor / major)
+- Exception: fixes to an **unreleased** feature that already has a pending `.changeset/` entry do not need a second changeset
+- Do not manually edit package version unless following the changeset flow
+- `CHANGELOG.md` is managed via changesets — prefer changeset entries over hand-editing history
+
+## Public exports
+
+Published surface is defined by `package.json` `exports` and `src/index.ts` (plus `./segments/*`). New deep imports need matching export entries if they should be public.

@@ -1,0 +1,36 @@
+---
+description: Core context for the js-vtt WebVTT library
+alwaysApply: true
+---
+
+# js-vtt
+
+TypeScript library for parsing, building, and manipulating WebVTT (and SRT) subtitle files. Pure ESM (`"type": "module"`). Package manager: **pnpm**.
+
+## Layout
+
+- `src/` — library source; public entry is `src/index.ts`
+- `src/vtt.ts` — core `VTT` class
+- `src/segments/` — `Segment` hierarchy (Header, Cue, Region, Style, Comment)
+- `src/errors/` — typed error classes (default exports, re-exported from index)
+- `src/helpers.ts` — segment/format detectors
+- `tests/` — Vitest unit tests mirroring `src/`
+- `docs/` — VitePress documentation
+- Use `src/main.ts` only as a local scratch/dev entry; do not ship it
+
+## Commands
+
+```bash
+pnpm test      # vitest + coverage
+pnpm lint      # eslint
+pnpm build     # tsdown → dist/
+pnpm format    # prettier
+pnpm changeset # versioning before release
+```
+
+## Non-negotiables
+
+- Keep the package **ESM-only** (no CommonJS)
+- Prefer extending existing segment / error patterns over new abstractions
+- Do not break the public API (`VTT`, segments, helpers, errors) without a changeset and docs/readme updates
+- Prefer `pnpm` over npm/yarn in scripts and docs examples when adding project-local instructions

@@ -1,4 +1,4 @@
-import { Segment } from './segment';
+import { Segment } from './segment.js';
 
 export class Header extends Segment {
     _type = 'header' as const;

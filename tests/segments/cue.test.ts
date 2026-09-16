@@ -27,6 +27,15 @@ describe('Cue', () => {
             const cue = new Cue(0, 1, 'Text');
             expect(cue.identifier).toBeUndefined();
         });
+
+        it('regionId mirrors settings.region', () => {
+            const cue = new Cue(0, 1, 'Text', undefined, { region: 'fred' });
+            expect(cue.regionId).toBe('fred');
+        });
+
+        it('regionId is undefined when settings.region is absent', () => {
+            expect(new Cue(0, 1, 'Text').regionId).toBeUndefined();
+        });
     });
 
     describe('setters (fluent chaining)', () => {
@@ -118,6 +127,14 @@ describe('Cue', () => {
 
         it('returns false when startTime is negative', () => {
             expect(new Cue(-1, 5, 'Hello').valid).toBe(false);
+        });
+
+        it('returns false when startTime is NaN', () => {
+            expect(new Cue(NaN, 5, 'Hello').valid).toBe(false);
+        });
+
+        it('returns false when endTime is Infinity', () => {
+            expect(new Cue(0, Infinity, 'Hello').valid).toBe(false);
         });
 
         it('returns false when endTime equals startTime', () => {
@@ -290,6 +307,24 @@ describe('Cue', () => {
         it('parses multi-line cue text', () => {
             const cue = Cue.fromString('00:00:01.000 --> 00:00:04.000\nLine one\nLine two');
             expect(cue.text).toBe('Line one\nLine two');
+        });
+
+        it('parses a cue with only a timing line and no text', () => {
+            const cue = Cue.fromString('01:37:56.620 --> 01:37:57.788');
+            expect(cue.startTime).toBeCloseTo(5876.62, 3);
+            expect(cue.endTime).toBeCloseTo(5877.788, 3);
+            expect(cue.text).toBe('');
+        });
+
+        it('parses a cue with a trailing newline but empty payload', () => {
+            const cue = Cue.fromString('00:00:01.000 --> 00:00:02.000\n');
+            expect(cue.text).toBe('');
+        });
+
+        it('parses an empty cue that has an identifier', () => {
+            const cue = Cue.fromString('864\n01:37:56.620 --> 01:37:57.788');
+            expect(cue.identifier).toBe('864');
+            expect(cue.text).toBe('');
         });
 
         it('parses short mm:ss.mmm timestamps', () => {

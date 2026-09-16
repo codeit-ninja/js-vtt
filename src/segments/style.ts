@@ -1,6 +1,6 @@
-import InvalidStyleError from '../errors/InvalidStyleError';
-import { isStyle } from '../helpers';
-import { Segment } from './segment';
+import InvalidStyleError from '../errors/InvalidStyleError.js';
+import { isStyle } from '../helpers.js';
+import { Segment } from './segment.js';
 
 export type CueCSSProperty =
     | 'color'

@@ -1,6 +1,6 @@
-import InvalidCommentError from '../errors/InvalidCommentError';
-import { isNote } from '../helpers';
-import { Segment } from './segment';
+import InvalidCommentError from '../errors/InvalidCommentError.js';
+import { isNote } from '../helpers.js';
+import { Segment } from './segment.js';
 
 export class Comment extends Segment {
     _type = 'comment' as const;

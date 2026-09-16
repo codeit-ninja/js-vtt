@@ -1,11 +1,47 @@
-import { isNote, isCue, isHeader, isRegion, isStyle, isSRT } from './helpers';
-import { Cue, InvalidVttError, Region } from './index';
-import { Header } from './segments/header';
-import { SegementType, Segment, SegmentTypeMap } from './segments/segment';
-import { CueCSSProperty, Style } from './segments/style';
-import { Comment } from './segments/comment';
-import { CueSettings } from './segments/cue';
-import { RegionAnchor } from './segments/region';
+import { isNote, isCue, isHeader, isRegion, isStyle, isSRT } from './helpers.js';
+import InvalidHeaderError from './errors/InvalidHeaderError.js';
+import InvalidVttError from './errors/InvalidVttError.js';
+import SrtValidationError from './errors/SrtValidationError.js';
+import { Header } from './segments/header.js';
+import { SegmentType, Segment, SegmentTypeMap } from './segments/segment.js';
+import { CueCSSProperty, Style } from './segments/style.js';
+import { Comment } from './segments/comment.js';
+import { Cue, CueSettings } from './segments/cue.js';
+import { Region, RegionAnchor } from './segments/region.js';
+
+type SegmentJSON = ReturnType<Segment['toJSON']>;
+
+function segmentFromJSON(segment: SegmentJSON): Segment {
+    if ('rules' in segment) {
+        return new Style(segment.rules);
+    }
+    if ('startTime' in segment) {
+        return new Cue(
+            segment.startTime,
+            segment.endTime,
+            segment.text,
+            segment.identifier,
+            segment.settings,
+        );
+    }
+    if ('regionAnchor' in segment || segment._type === 'region') {
+        return new Region(
+            segment.id,
+            segment.width,
+            segment.lines,
+            segment.regionAnchor,
+            segment.viewportAnchor,
+            segment.scroll,
+        );
+    }
+    if ('text' in segment) {
+        return new Comment(segment.text);
+    }
+    throw new InvalidVttError(
+        'Invalid VTT JSON: Unrecognized segment shape',
+        JSON.stringify(segment),
+    );
+}
 
 export class VTT {
     #segments: Segment[] = [];
@@ -13,11 +49,12 @@ export class VTT {
     /**
      * Gets the list of segments in the VTT instance, which includes cues, regions, styles, and comments.
      * The header segment is included as the first element in this list.
+     * Returns a shallow copy; mutating the array does not affect the VTT instance.
      *
      * @returns An array of Segment instances representing all segments in the VTT file, including the header as the first segment.
      */
     get segments() {
-        return this.#segments;
+        return [...this.#segments];
     }
     /**
      * Gets the header segment of the VTT instance, which contains metadata and description information about the VTT file.
@@ -171,6 +208,16 @@ export class VTT {
      * @returns The VTT instance with updated cue timings.
      */
     rescale(originalDuration: number, newDuration: number) {
+        if (
+            !Number.isFinite(originalDuration) ||
+            !Number.isFinite(newDuration) ||
+            originalDuration === 0
+        ) {
+            throw new InvalidVttError(
+                'Invalid rescale arguments: originalDuration and newDuration must be finite, and originalDuration must be non-zero',
+            );
+        }
+
         const ratio = newDuration / originalDuration;
 
         for (const segment of this.#segments) {
@@ -198,6 +245,17 @@ export class VTT {
      * @param targetFps - The frame rate of the target video.
      */
     syncFps(sourceFps: number, targetFps: number): this {
+        if (
+            !Number.isFinite(sourceFps) ||
+            !Number.isFinite(targetFps) ||
+            sourceFps === 0 ||
+            targetFps === 0
+        ) {
+            throw new InvalidVttError(
+                'Invalid syncFps arguments: sourceFps and targetFps must be finite and non-zero',
+            );
+        }
+
         const factor = sourceFps / targetFps;
 
         for (const segment of this.#segments) {
@@ -284,9 +342,9 @@ export class VTT {
      * @returns An array of segments matching the specified type.
      */
     getSegmentsByType<T extends Segment>(type: new (...args: any[]) => T): T[];
-    getSegmentsByType<K extends SegementType>(type: K): SegmentTypeMap[K][];
+    getSegmentsByType<K extends SegmentType>(type: K): SegmentTypeMap[K][];
     getSegmentsByType<T extends Segment>(
-        type: (new (...args: any[]) => T) | SegementType,
+        type: (new (...args: any[]) => T) | SegmentType,
     ): T[] | Segment[] {
         if (typeof type === 'string') {
             return this.#segments.filter((s) => s._type === type);
@@ -314,8 +372,36 @@ export class VTT {
         const track = video.addTextTrack(kind, label, language);
 
         for (const cue of this.getCues()) {
-            const vtTCue = new VTTCue(cue.startTime, cue.endTime, cue.text);
-            track.addCue(vtTCue);
+            const vttCue = new VTTCue(cue.startTime, cue.endTime, cue.text);
+
+            if (cue.identifier !== undefined) {
+                vttCue.id = String(cue.identifier);
+            }
+
+            const { align, line, position, size, vertical } = cue.settings;
+            if (align !== undefined) {
+                vttCue.align = align;
+            }
+            if (line !== undefined) {
+                vttCue.line = line as VTTCue['line'];
+            }
+            if (position !== undefined) {
+                const parsed = parseFloat(position);
+                if (!Number.isNaN(parsed)) {
+                    vttCue.position = parsed;
+                }
+            }
+            if (size !== undefined) {
+                const parsed = parseFloat(size);
+                if (!Number.isNaN(parsed)) {
+                    vttCue.size = parsed;
+                }
+            }
+            if (vertical !== undefined) {
+                vttCue.vertical = vertical;
+            }
+
+            track.addCue(vttCue);
         }
 
         return track;
@@ -357,6 +443,7 @@ export class VTT {
     /**
      * Parses a VTT file from a string input, extracting the header and segments to construct a VTT instance.
      * The input string is expected to be in valid WebVTT format, with segments separated by double newlines.
+     * Unrecognized blocks throw InvalidVttError.
      *
      * @param str - The input string containing the VTT file content.
      * @returns A VTT instance constructed from the parsed string.
@@ -372,7 +459,7 @@ export class VTT {
         const headerSegment = segments.shift()!;
 
         if (!isHeader(headerSegment)) {
-            throw new InvalidVttError(
+            throw new InvalidHeaderError(
                 'Invalid VTT file: Header is malformed',
                 headerSegment,
             );
@@ -384,18 +471,17 @@ export class VTT {
         for (const segment of segments) {
             if (isStyle(segment)) {
                 vtt.addSegment(Style.fromString(segment));
-            }
-
-            if (isCue(segment)) {
+            } else if (isCue(segment)) {
                 vtt.addSegment(Cue.fromString(segment));
-            }
-
-            if (isRegion(segment)) {
+            } else if (isRegion(segment)) {
                 vtt.addSegment(Region.fromString(segment));
-            }
-
-            if (isNote(segment)) {
+            } else if (isNote(segment)) {
                 vtt.addSegment(Comment.fromString(segment));
+            } else {
+                throw new InvalidVttError(
+                    'Invalid VTT file: Unrecognized segment block',
+                    segment,
+                );
             }
         }
         if (!vtt.validate()) {
@@ -412,38 +498,13 @@ export class VTT {
      * The input JSON is expected to have a structure matching the output of the `toJSON` method, with a header object and an array of segments.
      *
      * @param json - The input JSON object representing the VTT file.
-     * @returns A VTT instance constructed from the parsed JSON.q
+     * @returns A VTT instance constructed from the parsed JSON.
      */
     static fromJSON(json: ReturnType<VTT['toJSON']>) {
         const vtt = new VTT(json.header.description, json.header.meta);
 
         for (const segment of json.segments) {
-            if ('rules' in segment) {
-                vtt.addSegment(new Style(segment.rules));
-            } else if ('startTime' in segment) {
-                vtt.addSegment(
-                    new Cue(
-                        segment.startTime,
-                        segment.endTime,
-                        segment.text,
-                        segment.identifier,
-                        segment.settings,
-                    ),
-                );
-            } else if ('regionAnchor' in segment) {
-                vtt.addSegment(
-                    new Region(
-                        segment.id,
-                        segment.width,
-                        segment.lines,
-                        segment.regionAnchor,
-                        segment.viewportAnchor,
-                        segment.scroll,
-                    ),
-                );
-            } else if ('text' in segment) {
-                vtt.addSegment(new Comment(segment.text));
-            }
+            vtt.addSegment(segmentFromJSON(segment));
         }
 
         if (!vtt.validate()) {
@@ -461,21 +522,29 @@ export class VTT {
      * @param url - The URL of the VTT file to load.
      * @returns A promise that resolves to a VTT instance constructed from the fetched file.
      */
-    static fromURL(url: string) {
-        return fetch(url)
-            .then((res) => res.text())
-            .then((text) => {
-                if (isSRT(text)) {
-                    return VTT.fromSRT(text);
-                }
-
-                return VTT.fromString(text);
-            })
-            .catch((err) => {
-                throw new Error(
-                    `Failed to load VTT file from URL: ${err.message}`,
-                );
+    static async fromURL(url: string) {
+        let res: Response;
+        try {
+            res = await fetch(url);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            throw new Error(`Failed to load VTT file from URL: ${message}`, {
+                cause: err,
             });
+        }
+
+        if (!res.ok) {
+            throw new Error(
+                `Failed to load VTT file from URL: HTTP ${res.status} ${res.statusText}`,
+            );
+        }
+
+        const text = await res.text();
+        if (isSRT(text)) {
+            return VTT.fromSRT(text);
+        }
+
+        return VTT.fromString(text);
     }
     /**
      * Parses a VTT file from an SRT string input, converting the SRT format to WebVTT format and constructing a VTT instance.
@@ -500,7 +569,7 @@ export class VTT {
                     ),
                 );
                 if (timingLineIndex === -1) {
-                    throw new InvalidVttError(
+                    throw new SrtValidationError(
                         'Invalid SRT segment: Missing timing line',
                         segment,
                     );
@@ -523,22 +592,22 @@ export class VTT {
     /**
      * Merges two or more VTT instances into a single new VTT instance.
      * The header of the first instance is used for the merged result.
-     * All non-header segments from each instance are appended in order.
+     * All non-header segments from each instance are cloned and appended in order.
      *
      * @param vtts - Two or more VTT instances to merge.
-     * @returns A new VTT instance containing all segments from the provided instances.
+     * @returns A new VTT instance containing clones of all segments from the provided instances.
      */
     static merge(...vtts: VTT[]): VTT {
         const [first, ...rest] = vtts;
         const merged = new VTT(first.header.description, first.header.meta);
 
         for (const segment of first.segments.slice(1)) {
-            merged.addSegment(segment);
+            merged.addSegment(segmentFromJSON(segment.toJSON()));
         }
 
         for (const vtt of rest) {
             for (const segment of vtt.segments.slice(1)) {
-                merged.addSegment(segment);
+                merged.addSegment(segmentFromJSON(segment.toJSON()));
             }
         }
 

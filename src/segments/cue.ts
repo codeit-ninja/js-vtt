@@ -1,5 +1,5 @@
-import InvalidCueError from '../errors/InvalidCueError';
-import { Segment } from './segment';
+import InvalidCueError from '../errors/InvalidCueError.js';
+import { Segment } from './segment.js';
 
 export type CueSettings = {
     vertical?: 'rl' | 'lr';
@@ -36,8 +36,9 @@ function secondsToHms(seconds: number): string {
     );
 }
 
+// Text/payload is optional: empty cues (timing only) are valid WebVTT.
 const CUE_REGEX =
-    /^(?:(?<identifier>(?![\d:]+-->)[^\n]+)\n)?(?<timings>[\d:.,]+\s+-->\s+[\d:.,]+[^\n]*)\n(?<text>[\s\S]+)$/;
+    /^(?:(?<identifier>(?![\d:]+-->)[^\n]+)\n)?(?<timings>[\d:.,]+\s+-->\s+[\d:.,]+[^\n]*)(?:\n(?<text>[\s\S]*))?$/;
 
 export class Cue<T extends CueSettings = CueSettings> extends Segment {
     _type = 'cue' as const;
@@ -47,7 +48,6 @@ export class Cue<T extends CueSettings = CueSettings> extends Segment {
     #text: string;
     #identifier?: string | number;
     #settings: T;
-    #regionId?: string;
 
     constructor(
         startTime: number,
@@ -65,7 +65,7 @@ export class Cue<T extends CueSettings = CueSettings> extends Segment {
     }
 
     get regionId() {
-        return this.#regionId;
+        return this.#settings.region;
     }
 
     get startTime() {
@@ -120,6 +120,9 @@ export class Cue<T extends CueSettings = CueSettings> extends Segment {
 
     get valid(): boolean {
         // Per spec §4.1: endTime must be greater than startTime, both non-negative.
+        if (!Number.isFinite(this.#startTime) || !Number.isFinite(this.#endTime)) {
+            return false;
+        }
         if (this.#startTime < 0 || this.#endTime <= this.#startTime) return false;
         // Per spec §4.1: cue payload must not contain '-->'.
         if (this.#text.includes('-->')) return false;
@@ -189,7 +192,7 @@ export class Cue<T extends CueSettings = CueSettings> extends Segment {
         return new Cue(
             hmsToSeconds(startRaw),
             hmsToSeconds(endRaw),
-            text.trim(),
+            text?.trim() ?? '',
             identifier?.trim(),
             settings,
         );

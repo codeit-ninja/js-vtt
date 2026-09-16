@@ -4,6 +4,8 @@ import { Cue } from '../src/segments/cue';
 import { Region } from '../src/segments/region';
 import { Comment } from '../src/segments/comment';
 import InvalidVttError from '../src/errors/InvalidVttError';
+import InvalidHeaderError from '../src/errors/InvalidHeaderError';
+import SrtValidationError from '../src/errors/SrtValidationError';
 
 // ---------------------------------------------------------------------------
 // Real-world-ish WebVTT fixture strings
@@ -523,18 +525,42 @@ describe('VTT fromString()', () => {
         expect(seg.endTime).toBe(4);
     });
 
+    it('parses cues that have a timing line but no text payload', () => {
+        const input = `WEBVTT
+
+00:00:01.000 --> 00:00:02.000
+Hello
+
+01:37:56.620 --> 01:37:57.788
+
+00:00:03.000 --> 00:00:04.000
+World`;
+        const vtt = VTT.fromString(input);
+        const cues = vtt.getCues();
+        expect(cues).toHaveLength(3);
+        expect(cues[1].text).toBe('');
+        expect(cues[1].startTime).toBeCloseTo(5876.62, 3);
+        expect(cues[1].endTime).toBeCloseTo(5877.788, 3);
+    });
+
     it('round-trips: fromString → toString → fromString produces identical segments', () => {
         const vtt1 = VTT.fromString(FULL_VTT);
         const vtt2 = VTT.fromString(vtt1.toString());
         expect(vtt2.toJSON().segments.length).toBe(vtt1.toJSON().segments.length);
     });
 
-    it('throws InvalidVttError for a malformed header', () => {
-        expect(() => VTT.fromString('NOT A VTT FILE')).toThrow(InvalidVttError);
+    it('throws InvalidHeaderError for a malformed header', () => {
+        expect(() => VTT.fromString('NOT A VTT FILE')).toThrow(InvalidHeaderError);
     });
 
-    it('throws InvalidVttError for an empty string', () => {
-        expect(() => VTT.fromString('')).toThrow(InvalidVttError);
+    it('throws InvalidHeaderError for an empty string', () => {
+        expect(() => VTT.fromString('')).toThrow(InvalidHeaderError);
+    });
+
+    it('throws InvalidVttError for an unrecognized segment block', () => {
+        expect(() =>
+            VTT.fromString('WEBVTT\n\nUNKNOWN BLOCK\nwith content'),
+        ).toThrow(InvalidVttError);
     });
 
     it('handles a file where cues have no blank line between NOTE and first cue', () => {
@@ -649,6 +675,14 @@ describe('VTT rescale()', () => {
         const vtt = new VTT().addCue(0, 10, 'Hi');
         expect(vtt.rescale(100, 100)).toBe(vtt);
     });
+
+    it('throws when originalDuration is 0', () => {
+        expect(() => new VTT().addCue(0, 1, 'Hi').rescale(0, 100)).toThrow(InvalidVttError);
+    });
+
+    it('throws when originalDuration is NaN', () => {
+        expect(() => new VTT().addCue(0, 1, 'Hi').rescale(NaN, 100)).toThrow(InvalidVttError);
+    });
 });
 
 describe('VTT syncFps()', () => {
@@ -676,6 +710,14 @@ describe('VTT syncFps()', () => {
         const vtt = new VTT().addCue(0, 1, 'Hi');
         expect(vtt.syncFps(30, 30)).toBe(vtt);
     });
+
+    it('throws when targetFps is 0', () => {
+        expect(() => new VTT().addCue(0, 1, 'Hi').syncFps(30, 0)).toThrow(InvalidVttError);
+    });
+
+    it('throws when sourceFps is NaN', () => {
+        expect(() => new VTT().addCue(0, 1, 'Hi').syncFps(NaN, 30)).toThrow(InvalidVttError);
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -689,6 +731,9 @@ describe('VTT fromURL()', () => {
 
     it('fetches and parses a VTT file from a URL', async () => {
         vi.stubGlobal('fetch', async () => ({
+            ok: true,
+            status: 200,
+            statusText: 'OK',
             text: async () => MINIMAL_VTT,
         }));
         const vtt = await VTT.fromURL('https://example.com/sub.vtt');
@@ -697,9 +742,14 @@ describe('VTT fromURL()', () => {
 
     it('rejects when fetch returns an invalid VTT file', async () => {
         vi.stubGlobal('fetch', async () => ({
+            ok: true,
+            status: 200,
+            statusText: 'OK',
             text: async () => 'NOT A VTT FILE',
         }));
-        await expect(VTT.fromURL('https://example.com/bad.vtt')).rejects.toThrow();
+        await expect(VTT.fromURL('https://example.com/bad.vtt')).rejects.toThrow(
+            InvalidHeaderError,
+        );
     });
 
     it('rejects when fetch itself fails', async () => {
@@ -709,9 +759,26 @@ describe('VTT fromURL()', () => {
         await expect(VTT.fromURL('https://example.com/fail.vtt')).rejects.toThrow('Network error');
     });
 
+    it('rejects when the HTTP response is not ok', async () => {
+        vi.stubGlobal('fetch', async () => ({
+            ok: false,
+            status: 404,
+            statusText: 'Not Found',
+            text: async () => 'Not Found',
+        }));
+        await expect(VTT.fromURL('https://example.com/missing.vtt')).rejects.toThrow(
+            'HTTP 404',
+        );
+    });
+
     it('auto-detects and parses an SRT file from a URL', async () => {
         const srt = '1\n00:00:01,000 --> 00:00:04,000\nHello SRT';
-        vi.stubGlobal('fetch', async () => ({ text: async () => srt }));
+        vi.stubGlobal('fetch', async () => ({
+            ok: true,
+            status: 200,
+            statusText: 'OK',
+            text: async () => srt,
+        }));
         const vtt = await VTT.fromURL('https://example.com/sub.srt');
         expect(vtt.toJSON().segments[0]).toMatchObject({
             startTime: 1,
@@ -780,7 +847,9 @@ describe('VTT fromSRT()', () => {
     });
 
     it('throws when a segment has no timing line', () => {
-        expect(() => VTT.fromSRT('just some text\n\nanother block')).toThrow();
+        expect(() => VTT.fromSRT('just some text\n\nanother block')).toThrow(
+            SrtValidationError,
+        );
     });
 });
 
@@ -852,6 +921,25 @@ describe('VTT merge()', () => {
         const b = new VTT().addRegion('r1').addCue(2, 3, 'B');
         const merged = VTT.merge(a, b);
         expect(merged.toJSON().segments).toHaveLength(4);
+    });
+
+    it('clones segments so mutating the merge does not affect sources', () => {
+        const a = new VTT().addCue(0, 1, 'A');
+        const b = new VTT().addCue(2, 3, 'B');
+        const merged = VTT.merge(a, b);
+        merged.getCues()[0].setText('Mutated');
+        expect(a.getCues()[0].text).toBe('A');
+        expect(merged.getCues()[0].text).toBe('Mutated');
+    });
+});
+
+describe('VTT segments getter', () => {
+    it('returns a shallow copy that cannot mutate internal state', () => {
+        const vtt = new VTT().addCue(0, 1, 'A');
+        const copy = vtt.segments;
+        copy.push(new Cue(2, 3, 'Injected'));
+        expect(vtt.getCues()).toHaveLength(1);
+        expect(vtt.segments).toHaveLength(2);
     });
 });
 
@@ -978,6 +1066,14 @@ describe('VTT getSegmentsByType()', () => {
         const vtt = new VTT().addCue(0, 1, 'A').addCue(2, 3, 'B').addRegion('r');
         expect(vtt.getSegmentsByType(Cue)).toHaveLength(2);
     });
+
+    it('returns library Comment instances when filtering by "comment"', () => {
+        const vtt = new VTT().addComment('note').addCue(0, 1, 'A');
+        const comments = vtt.getSegmentsByType('comment');
+        expect(comments).toHaveLength(1);
+        expect(comments[0]).toBeInstanceOf(Comment);
+        expect(comments[0].text).toBe('note');
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -1099,5 +1195,46 @@ describe('VTT attachToVideo()', () => {
 
         const track = new VTT().addCue(0, 1, 'Hi').attachToVideo(videoMock, 'captions');
         expect(track).toBe(mockTrack);
+    });
+
+    it('copies identifier and cue settings onto VTTCue', () => {
+        const addCueMock = vi.fn();
+        const videoMock = {
+            addTextTrack: vi.fn(() => ({ addCue: addCueMock })),
+        } as unknown as HTMLVideoElement;
+        vi.stubGlobal(
+            'VTTCue',
+            class {
+                id = '';
+                align = '';
+                line: string | number = 'auto';
+                position: number | string = 'auto';
+                size = 100;
+                vertical = '';
+                constructor(
+                    public start: number,
+                    public end: number,
+                    public text: string,
+                ) {}
+            },
+        );
+
+        new VTT()
+            .addCue(0, 1, 'Hi', 'intro', {
+                align: 'center',
+                line: 0,
+                position: '50%',
+                size: '80%',
+                vertical: 'rl',
+            })
+            .attachToVideo(videoMock, 'subtitles');
+
+        const cue = addCueMock.mock.calls[0][0];
+        expect(cue.id).toBe('intro');
+        expect(cue.align).toBe('center');
+        expect(cue.line).toBe(0);
+        expect(cue.position).toBe(50);
+        expect(cue.size).toBe(80);
+        expect(cue.vertical).toBe('rl');
     });
 });

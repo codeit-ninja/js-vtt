@@ -1,0 +1,50 @@
+---
+description: TypeScript and API conventions for js-vtt source
+globs: src/**/*.ts
+alwaysApply: false
+---
+
+# TypeScript library conventions
+
+## Modules
+
+- Use ESM imports with **`.js` extensions** in relative paths (Node ESM resolution):
+
+```ts
+// ✅ GOOD
+import { Cue } from './cue.js';
+
+// ❌ BAD
+import { Cue } from './cue';
+```
+
+- Strict TypeScript; avoid widening public types unnecessarily
+- Private state uses `#field` private class fields
+
+## Fluent API
+
+Public mutators return `this` for chaining:
+
+```ts
+// ✅ GOOD
+setText(text: string): this {
+    this.#text = text;
+    return this;
+}
+```
+
+## Segments
+
+- New segment kinds extend `Segment` and implement `toString`, `toJSON`, `valid`, and typically `static fromString`
+- Set `_type` as a string literal (`'cue' | 'region' | 'style' | 'header' | 'comment'`)
+- Re-export new public types from `src/segments/index.ts` and `src/index.ts` when they are part of the API
+
+## Errors
+
+- Add domain errors under `src/errors/` as `export default class … extends Error`
+- Re-export from `src/errors/index.ts`
+- Prefer throwing these over generic `Error` for parse/validation failures
+
+## Formatting
+
+- Prettier: 4-space indent, single quotes, semicolons, trailing commas, printWidth 80

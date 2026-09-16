@@ -1,0 +1,28 @@
+---
+description: Require a changeset for features, fixes, and other user-visible changes
+alwaysApply: true
+---
+
+# Changesets
+
+Every user-visible change (feature, bug fix, breaking change, notable behavior change) needs a changeset via `pnpm changeset`.
+
+## Required
+
+- Add a changeset in the same change set as the code (patch / minor / major as appropriate)
+- Describe the impact for consumers, not implementation detail
+- Do not bump `package.json` version by hand
+
+## Exception — unreleased work
+
+If the change only fixes or adjusts a **new feature that is not released yet** and already has an open changeset under `.changeset/`, do **not** add another changeset. Fold the fix into that pending release note if the wording should change.
+
+```text
+✅ Feature landed with a changeset → later bug in that unreleased feature → no new changeset
+✅ Bug in already-released behavior → new patch changeset
+✅ New feature / public API change → new changeset
+```
+
+## Skip
+
+Internal-only work with no consumer impact (refactors, tests, lint, docs-only, tooling) does not need a changeset unless it affects the published package or documented API.

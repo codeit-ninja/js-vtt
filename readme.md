@@ -58,6 +58,8 @@ console.log(vtt.toString());
 
 ### From a string
 
+Parses a WebVTT string. Unrecognized blocks throw `InvalidVttError`. A missing or malformed header throws `InvalidHeaderError`.
+
 ```ts
 import { VTT } from 'js-vtt';
 
@@ -71,7 +73,7 @@ const vtt = VTT.fromString(raw);
 
 ### From a URL
 
-Fetches the file at the given URL and parses it. Auto-detects SRT vs VTT.
+Fetches the file at the given URL and parses it. Auto-detects SRT vs VTT. Non-OK HTTP responses and network failures reject the promise; parse errors are rethrown as typed errors.
 
 ```ts
 const vtt = await VTT.fromURL('https://example.com/subtitles.vtt');
@@ -108,7 +110,7 @@ const restored = VTT.fromJSON(json);
 
 ### Merging multiple files
 
-Combines two or more `VTT` instances into one. The header of the first instance is used.
+Combines two or more `VTT` instances into one. The header of the first instance is used. Segments are deep-cloned so mutating the result does not affect the sources.
 
 ```ts
 const merged = VTT.merge(vttA, vttB, vttC);
@@ -358,7 +360,7 @@ vtt.getSegmentsByType('style'); // Style[]
 
 ### `segments`
 
-The full list of all segments including the header (index 0).
+A shallow copy of all segments including the header (index 0). Mutating the returned array does not change the VTT instance.
 
 ```ts
 vtt.segments; // Segment[]
@@ -480,7 +482,7 @@ Individual segments also have `toString()` and `toJSON()` methods.
 
 ### `attachToVideo(video, kind, label?, language?)`
 
-Creates a [`TextTrack`](https://developer.mozilla.org/en-US/docs/Web/API/TextTrack) on the given `HTMLVideoElement` and populates it with `VTTCue` objects from all cues in the instance.
+Creates a [`TextTrack`](https://developer.mozilla.org/en-US/docs/Web/API/TextTrack) on the given `HTMLVideoElement` and populates it with `VTTCue` objects from all cues in the instance. Cue identifiers and settings (`align`, `line`, `position`, `size`, `vertical`) are copied onto each `VTTCue` when present.
 
 ```ts
 const track = vtt.attachToVideo(videoEl, 'subtitles', 'English', 'en');
@@ -500,24 +502,24 @@ track.mode = 'showing';
 
 All errors extend the native `Error` class and include the offending segment string in the message for easy debugging.
 
-| Class                 | Thrown when                                                     |
-| --------------------- | --------------------------------------------------------------- |
-| `InvalidHeaderError`  | `VTT.fromString()` receives a missing/malformed `WEBVTT` header |
-| `InvalidCueError`     | `Cue.fromString()` receives a malformed cue block               |
-| `InvalidRegionError`  | `Region.fromString()` receives a malformed region block         |
-| `InvalidStyleError`   | `Style.fromString()` receives a malformed style block           |
-| `InvalidCommentError` | `Comment.fromString()` receives a malformed NOTE block          |
-| `InvalidVttError`     | General VTT-level validation failure (parsing or structure)     |
-| `SrtValidationError`  | SRT-specific validation failure                                 |
+| Class                 | Thrown when                                                                  |
+| --------------------- | ---------------------------------------------------------------------------- |
+| `InvalidHeaderError`  | `VTT.fromString()` receives a missing/malformed `WEBVTT` header              |
+| `InvalidCueError`     | `Cue.fromString()` receives a malformed cue block                            |
+| `InvalidRegionError`  | `Region.fromString()` receives a malformed region block                      |
+| `InvalidStyleError`   | `Style.fromString()` receives a malformed style block                        |
+| `InvalidCommentError` | `Comment.fromString()` receives a malformed NOTE block                       |
+| `InvalidVttError`     | Unrecognized blocks, invalid structure, or bad timing-utility arguments      |
+| `SrtValidationError`  | `VTT.fromSRT()` receives a segment without a valid timing line               |
 
 ```ts
-import { VTT, InvalidVttError } from 'js-vtt';
+import { VTT, InvalidHeaderError } from 'js-vtt';
 
 try {
     VTT.fromString('not a vtt file');
 } catch (e) {
-    if (e instanceof InvalidVttError) {
-        console.error('Bad VTT:', e.message);
+    if (e instanceof InvalidHeaderError) {
+        console.error('Bad header:', e.message);
     }
 }
 ```

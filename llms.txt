@@ -1,30 +1,29 @@
 # js-vtt
 
-A TypeScript library (v1.0.4-beta) for parsing, building, and manipulating WebVTT subtitle files.
-Published as an ESM-only npm package.
+A TypeScript library for parsing, building, and manipulating WebVTT subtitle files
+(with SRT import/export). Published as an ESM-only npm package (no runtime dependencies).
 
 ## What it does
 
-- Parse `.vtt` strings, URLs, or JSON into a typed `VTT` object
+- Parse `.vtt` strings, URLs, files, or JSON into a typed `VTT` object
 - Build WebVTT files programmatically via a fluent/chainable API
 - Serialize back to WebVTT or SRT format
 - Manipulate cue timings: shift, rescale, and sync frame rates
-- Validate the structure of a VTT file
+- Validate the structure of a VTT file (unrecognized blocks throw)
 
 ## Tech stack
 
 | Tool            | Purpose                                      |
 |-----------------|----------------------------------------------|
-| TypeScript 6    | Primary language; strict, ESM                |
+| TypeScript      | Primary language; strict, ESM                |
 | pnpm            | Package manager                              |
 | tsdown          | Library bundler (outputs ESM + `.d.mts`)     |
 | Vitest          | Unit testing + coverage via @vitest/coverage-v8 |
-| ESLint 10       | Linting (typescript-eslint + prettier rules) |
-| Prettier 3      | Code formatting                              |
+| ESLint          | Linting (typescript-eslint + prettier rules) |
+| Prettier        | Code formatting                              |
 | VitePress       | Documentation site (under docs/)            |
 | changesets      | Versioning and changelog management          |
 | tsx             | Dev/watch runner                             |
-| lodash-es       | Only runtime dependency                      |
 
 ## Project structure
 
@@ -35,7 +34,7 @@ src/
   helpers.ts           — Regex-based segment type detectors
   main.ts              — Dev scratch file
   segments/
-    segment.ts         — Abstract base class for all segments
+    segment.ts         — Abstract base class; SegmentType / SegmentTypeMap
     cue.ts             — Timed text cue (startTime, endTime, text, settings)
     header.ts          — WEBVTT header with optional description and metadata
     region.ts          — REGION block (id, width, lines, anchors, scroll)
@@ -43,7 +42,6 @@ src/
     comment.ts         — NOTE (comment) block
     index.ts           — Re-exports all segment classes
   errors/
-    CalledItWrongError.ts
     InvalidCommentError.ts
     InvalidCueError.ts
     InvalidHeaderError.ts
@@ -81,11 +79,15 @@ vtt.syncFps(sourceFps, targetFps)     // remap timings across frame rates
 vtt.validate()              // returns boolean
 vtt.toJSON()                // returns plain object
 vtt.toString('vtt' | 'srt') // default 'vtt'
+vtt.segments                // shallow copy of segments (header first)
 
 // Static parsers
-VTT.fromString(str)         // parse WebVTT string
-VTT.fromURL(url)            // fetch and parse (returns Promise<VTT>)
+VTT.fromString(str)         // parse WebVTT; throws on unrecognized blocks
+VTT.fromURL(url)            // fetch and parse (checks res.ok)
+VTT.fromSRT(srt)            // SRT → VTT; SrtValidationError on bad timing
+VTT.fromFile(file)          // browser File
 VTT.fromJSON(json)          // reconstruct from toJSON() output
+VTT.merge(...vtts)          // deep-clone merge
 ```
 
 ### Segment hierarchy
@@ -102,8 +104,8 @@ Segment (abstract)
 All segments implement:
 - `toString(format?, index?)` — serialise to VTT or SRT string
 - `toJSON()` — plain-object representation
-- `isValid()` — structural validation
-- `static fromString(str)` — parse from raw block string
+- `valid` / `isValid()` — structural validation
+- `static fromString(str)` — parse from raw block string (where applicable)
 
 ### CueSettings type
 
@@ -118,6 +120,8 @@ type CueSettings = {
 }
 ```
 
+`cue.regionId` mirrors `settings.region`.
+
 ## Conventions
 
 - All source files use `.ts` extensions internally but import with `.js` extensions (Node ESM resolution)
@@ -125,7 +129,7 @@ type CueSettings = {
 - All public mutators return `this` to enable method chaining
 - Errors are typed custom classes in `src/errors/`
 - No CommonJS; ESM-only (`"type": "module"` in package.json)
-- Tests live alongside or near the source files and are run with `pnpm test`
+- Tests live under `tests/` mirroring `src/` and are run with `pnpm test`
 
 ## Scripts
 

@@ -1,10 +1,10 @@
-import InvalidCommentError from './InvalidCommentError';
-import InvalidHeaderError from './InvalidHeaderError';
-import InvalidRegionError from './InvalidRegionError';
-import InvalidStyleError from './InvalidStyleError';
-import InvalidCueError from './InvalidCueError';
-import InvalidVttError from './InvalidVttError';
-import SrtValidationError from './SrtValidationError';
+import InvalidCommentError from './InvalidCommentError.js';
+import InvalidHeaderError from './InvalidHeaderError.js';
+import InvalidRegionError from './InvalidRegionError.js';
+import InvalidStyleError from './InvalidStyleError.js';
+import InvalidCueError from './InvalidCueError.js';
+import InvalidVttError from './InvalidVttError.js';
+import SrtValidationError from './SrtValidationError.js';
 
 export {
     InvalidCommentError,

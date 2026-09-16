@@ -1,6 +1,6 @@
-import InvalidRegionError from '../errors/InvalidRegionError';
-import { isRegion } from '../helpers';
-import { Segment } from './segment';
+import InvalidRegionError from '../errors/InvalidRegionError.js';
+import { isRegion } from '../helpers.js';
+import { Segment } from './segment.js';
 
 /**
  * A percentage value in the range [0, 100].

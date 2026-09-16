@@ -60,6 +60,10 @@ describe('isStyle', () => {
         expect(isStyle('STYLE\n::cue { color: white; }')).toBe(true);
     });
 
+    it('does not match STYLES (plural)', () => {
+        expect(isStyle('STYLES')).toBe(false);
+    });
+
     it('does not match lowercase style', () => {
         expect(isStyle('style')).toBe(false);
     });
@@ -80,6 +84,10 @@ describe('isNote', () => {
 
     it('matches NOTE with a block body', () => {
         expect(isNote('NOTE\nThis is a comment')).toBe(true);
+    });
+
+    it('does not match NOTES (plural)', () => {
+        expect(isNote('NOTES')).toBe(false);
     });
 
     it('does not match lowercase note', () => {
@@ -111,6 +119,10 @@ describe('isCue', () => {
     it('matches short mm:ss.mmm timestamps', () => {
         const cue = '01:23.456 --> 01:26.789\nShort form';
         expect(isCue(cue)).toBe(true);
+    });
+
+    it('matches a cue with only a timing line', () => {
+        expect(isCue('01:37:56.620 --> 01:37:57.788')).toBe(true);
     });
 
     it('does not match a WEBVTT header', () => {

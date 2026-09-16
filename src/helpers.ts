@@ -3,11 +3,11 @@ export const isHeader = (line: string) => {
 };
 
 export const isStyle = (line: string) => {
-    return /^STYLE/.test(line);
+    return /^STYLE(?:\n|$)/.test(line);
 };
 
 export const isNote = (line: string) => {
-    return /^NOTE/.test(line);
+    return /^NOTE(?: |$|\n)/.test(line);
 };
 
 export const isCue = (str: string) => {

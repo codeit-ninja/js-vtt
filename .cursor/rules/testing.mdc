@@ -1,0 +1,40 @@
+---
+description: Vitest conventions for js-vtt tests
+globs: tests/**/*.ts
+alwaysApply: false
+---
+
+# Testing
+
+- Framework: **Vitest** (`describe` / `it` / `expect`)
+- Mirror source layout: `src/segments/cue.ts` → `tests/segments/cue.test.ts`
+- Import from `../../src/...` (or correct relative path); do not import from `dist/`
+
+## What to cover
+
+- Constructor + getters
+- Fluent setters return the same instance and update state
+- `toString` / `toJSON` / `fromString` round-trips where applicable
+- Validation and custom errors (`InvalidCueError`, etc.)
+- VTT vs SRT differences when format matters
+
+## Style
+
+```ts
+import { describe, it, expect } from 'vitest';
+import { Cue } from '../../src/segments/cue';
+
+describe('Cue', () => {
+    describe('setters (fluent chaining)', () => {
+        it('setText returns the cue and updates text', () => {
+            const cue = new Cue(0, 5, 'Old');
+            const result = cue.setText('New');
+            expect(result).toBe(cue);
+            expect(cue.text).toBe('New');
+        });
+    });
+});
+```
+
+- Prefer small, focused `it` blocks over large multi-assertion suites
+- Run `pnpm test` after behavior changes
